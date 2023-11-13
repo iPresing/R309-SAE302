@@ -1,5 +1,7 @@
 import socket
 import threading
+import sys
+from colorama import init, Fore, Back, Style
 
 host = "0.0.0.0"
 port = 1234
@@ -12,12 +14,17 @@ def send(socket, host):
     global connected
     while connected:
         msg = input(f"server@{host} $:")
+        #print("\033[1A\033[2K",end="")  # up + clear line 
+        print(f"you: ",msg, end="\n") if msg else None
+        #print('\033[1F',f'\n', end="") if msg else None # descebdre le curseur et afficher le prompt
         socket.send(msg.encode()) if msg else None
         if msg == "arret":
             connected = False
             #socket.close()
             break
         msg = None
+    else:
+        pass
     return 0
         
 def receive(socket, host):
@@ -28,13 +35,15 @@ def receive(socket, host):
         except ConnectionResetError:
             print("La connexion a été interrompue par le client")
             break
-        else:
-            print(f"\nclient :",reply) if reply else None
+        else: 
+            print(f"\nclient :",reply, end="") if reply else None
             if reply == "arret":
                 connected = False
                 #socket.close()
                 break
-            reply = None    
+            reply = None
+    else:
+        pass    
     return 0
 
 def interactive(target, host):
@@ -44,6 +53,7 @@ def interactive(target, host):
     threading.Thread(target=receive, args=(target,host)).start()
     #threading.Thread(target=send, args=(target,host)).start()
     send(target,host) # ne pas le mettre dans un thread pour qu'il puisse gérer activement l'input
+    # <---- ajouter message
     return 0
     """ while connected:
         reply = target.recv(1024).decode()

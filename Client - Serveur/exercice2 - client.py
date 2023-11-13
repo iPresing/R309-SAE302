@@ -3,6 +3,7 @@ import sys
 import random
 import threading
 import select
+import builtins
 from colorama import init, Fore, Back, Style
 
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
@@ -31,7 +32,7 @@ def main(host="127.0.0.1", port=1234):
         if not(synced == "synced"):
             raise ChallengeRefused("You're not allowed to access to this server...")
     except ChallengeRefused as err:
-        print("Erreur :", err)
+        print(Fore.RED + err)
     except ConnectionRefusedError as err:
         print(Fore.RED + " \nLa connexion n'a pas aboutie, vérifiez que le serveur est bien lancé et que l'adresse est correcte")
     else:
@@ -46,6 +47,9 @@ def send(socket, host):
     while connected:
         try:
             msg = input(f"you@{host} $:")
+            print("\033[1A\033[2K",end="")  # up + clear line 
+            print(f"you: ",msg, end="\n") if msg else None
+            #print('\033[1F',f'\n', end="") if msg else None # descebdre le curseur et afficher le prompt
             socket.send(msg.encode()) if msg else None
             if msg == "bye" or msg == "arret":
                 connected = False
@@ -67,7 +71,9 @@ def receive(socket, host):
     while connected:
         try:
             reply = socket.recv(1024).decode()
-            print(f"\nserver :",reply) if reply else None
+            print("\r\033[2K",end="")  # carriage return + clear line 
+            print(f"server: ",reply, end="") if reply else None
+            print('\033[1F',f'\nyou@{host} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
             if reply == "bye" or reply == "arret":
                 connected = False
                 socket.close()
