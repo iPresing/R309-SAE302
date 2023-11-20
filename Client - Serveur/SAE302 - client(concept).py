@@ -8,9 +8,6 @@ from colorama import init, Fore, Back, Style
 
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
 
-#host = "127.0.0.1"
-#port = 1234
-#message = "Hello World !"
 global connected
 connected = False
 
@@ -23,20 +20,24 @@ class ConnectionClosedByServer(Exception):
         super().__init__(message)
 
 
+
 def main(host="127.0.0.1", port=1234):
+    global username
     challenge = ",".join([str(random.randint(1,65535) * 2) for i in range(16)]) # un challenge pour reconnaître une connexion autorisée
     try:
         client_socket.connect((host, port))
         client_socket.send(challenge.encode())
         synced = client_socket.recv(1024).decode() # on attend la réponse du serveur pour continuer
-        if not(synced == "synced"):
+        if not "synced" in synced:
             raise ChallengeRefused("You're not allowed to access to this server...")
     except ChallengeRefused as err:
         print(Fore.RED + err)
     except ConnectionRefusedError as err:
         print(Fore.RED + " \nLa connexion n'a pas aboutie, vérifiez que le serveur est bien lancé et que l'adresse est correcte")
     else:
-        print(Fore.GREEN + "You're connected to the server !")
+        username = synced.split(',')[1]
+        #print(Fore.GREEN + "You're connected to the server !")
+        print(Fore.GREEN + f"Welcome {username} !") 
         interactive(host)
         
     return 0 #print(host,port,challenge)
@@ -46,7 +47,7 @@ def send(socket, host):
     global msg
     while connected:
         try:
-            msg = input(f"you@{host} $:")
+            msg = input(f"{username}@{host} $:")
             print("\033[1A\033[2K",end="")  # up + clear line 
             print(f"you: ",msg, end="\n") if msg else None
             #print('\033[1F',f'\n', end="") if msg else None # descebdre le curseur et afficher le prompt
@@ -57,9 +58,9 @@ def send(socket, host):
                 break
             msg = None
         except ConnectionAbortedError as err:
-            print(Fore.RED + "La connexion a été interrompue par le serveur") \
+            print(Fore.RED + "\rLa connexion a été interrompue par le serveur") \
                 if not msg == "bye" \
-                    else print(Fore.GREEN + "Vous avez bien été déconnecté du serveur")
+                    else print(Fore.GREEN + "\rVous avez bien été déconnecté du serveur")
             break
         else: 
             pass       
@@ -73,7 +74,7 @@ def receive(socket, host):
             reply = socket.recv(1024).decode()
             print("\r\033[2K",end="")  # carriage return + clear line 
             print(f"server: ",reply, end="") if reply else None
-            print('\033[1F',f'\nyou@{host} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+            print('\033[1F',f'\n{username}@{host} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
             if reply == "bye" or reply == "arret":
                 connected = False
                 socket.close()
@@ -81,12 +82,12 @@ def receive(socket, host):
                 break
             reply = None
         except ConnectionClosedByServer as err:
-            print(Fore.GREEN + "Vous avez bien été déconnecté du serveur")
+            print(Fore.GREEN + "\rVous avez bien été déconnecté du serveur")
             break
         except ConnectionAbortedError as err:
             print(Fore.RED + "La connexion a été interrompue par le serveur") \
                 if not msg == "bye" \
-                    else print(Fore.GREEN + "Vous avez bien été déconnecté du serveur")
+                    else print(Fore.GREEN + "\rVous avez bien été déconnecté du serveur")
             break
         else: 
             pass
@@ -101,14 +102,6 @@ def interactive(host):
     threading.Thread(target=receive, args=(client_socket,host)).start()
     send(client_socket,host) # ne pas le mettre dans un thread pour qu'il puisse gérer activement l'input
     #threading.Thread(target=send, args=(client_socket,host)).start()
-    """     while connected:
-        message = input(f"you@{host} $:")
-        print(f"you@{host} $:", message) if message else None
-        client_socket.send(message.encode()) if message else None
-        reply = client_socket.recv(1024).decode()
-        print(f"server@{host} $:",reply) if reply else None
-        reply = None
-        message = None """
     
     return 0 
 
@@ -130,18 +123,5 @@ if __name__ == "__main__":
         main()
         
         
-        
-        
 
-""" def send(target, message):
-    target.send(message.encode())
-
-
-client_socket.connect((host, port))
-client_socket.send(message.encode())
-
-reply = client_socket.recv(1024).decode()
-print(reply)
-client_socket.close()
- """
 
