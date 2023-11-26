@@ -2,14 +2,21 @@ import socket
 import sys
 import random
 import threading
-import select
-import builtins
 from colorama import init, Fore, Back, Style
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import os
+
 
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
 
 global connected
 connected = False
+
+key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
+iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
+cipher = AES.new(key, AES.MODE_CBC, iv)
+
 
 class ChallengeRefused(Exception): # erreur customisée en lien avec le challenge
     def __init__(self, message):
@@ -23,15 +30,21 @@ class ConnectionClosedByServer(Exception):
 
 def main(host="127.0.0.1", port=1234):
     global username
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    user = input("Username: ") or "default"
+    password = input("Password: ")
+    while not password:
+        password = input("Password: ")
     challenge = ",".join([str(random.randint(1,65535) * 2) for i in range(16)]) # un challenge pour reconnaître une connexion autorisée
+    payload = (challenge + ";" + user + "," + password).encode()
     try:
         client_socket.connect((host, port))
-        client_socket.send(challenge.encode())
+        client_socket.send(cipher.encrypt(pad(payload, AES.block_size)))
         synced = client_socket.recv(1024).decode() # on attend la réponse du serveur pour continuer
         if not "synced" in synced:
             raise ChallengeRefused("You're not allowed to access to this server...")
     except ChallengeRefused as err:
-        print(Fore.RED + err)
+        print(Fore.RED + str(err))
     except ConnectionRefusedError as err:
         print(Fore.RED + " \nLa connexion n'a pas aboutie, vérifiez que le serveur est bien lancé et que l'adresse est correcte")
     else:

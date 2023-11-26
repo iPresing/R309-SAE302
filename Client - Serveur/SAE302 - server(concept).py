@@ -1,10 +1,11 @@
 import socket
 import threading
-import sys
 from colorama import init, Fore, Back, Style
 from numpy import random
-import uuid
 from Crypto.Util.number import long_to_bytes
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import os
 
 # exception permettant de prévenir de l'envoie d'un "bye" général
 class LogoutBroadcast(Exception):
@@ -19,6 +20,9 @@ global connected
 global socket_list
 connected = True
 socket_list = {}
+key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
+iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
+cipher = AES.new(key, AES.MODE_CBC, iv)
 
 # Liste de pseudos par défaut
 default_pseudo =  ["Nosferatu","BlackBird","Pleiades","Hyades","Undertaker","BloodyReina","Wehrwolf","LaughingFox","SnowWitch"\
@@ -132,13 +136,21 @@ server_socket.listen(5)
 
 # Boucle principale d'attente de connexions
 while connected:
+    cipher = AES.new(key, AES.MODE_CBC, iv)
     conn, address = server_socket.accept()
-    message = conn.recv(1024).decode()
-    client_challenge = message.split(",")
+    message = conn.recv(1024)
+    message_1 = unpad(cipher.decrypt(message), AES.block_size).decode()
+
+    #message_2 = conn.recv(1024).decode()
+    client_challenge = message_1.split(";")[0].split(",")
+    credentials = message_1.split(";")[1].split(",")
     connect_condition = lambda x: int(x) % 2 == 0
     client_condition = all(connect_condition(elem) for elem in client_challenge)
     if client_condition:
-        unique_pseudo = random.choice(default_pseudo, replace=False) # choisir un pseudo unique
+        unique_pseudo = random.choice(default_pseudo, replace=False) \
+            if credentials[0] == "default" \
+                else credentials[0]  # choisir un pseudo unique si pas de user dans credentials
+        
         # ajouter au dictionnaire socket_list une entrée avec clé le pseudonyme et comme valeur le socket
         socket_list[f"{unique_pseudo}"] = conn
         conn.send(f"synced,{unique_pseudo}".encode())
