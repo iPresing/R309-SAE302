@@ -6,16 +6,16 @@ from colorama import init, Fore, Back, Style
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
+import argparse
 
-
+# configuration client
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
-
-global connected
+global connected    
 connected = False
-
 key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
 iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
 cipher = AES.new(key, AES.MODE_CBC, iv)
+
 
 
 class ChallengeRefused(Exception): # erreur customisée en lien avec le challenge
@@ -26,9 +26,24 @@ class ConnectionClosedByServer(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+# Instancier les arguments
+def arg_parse():
+    parser = argparse.ArgumentParser(description='Client pour le chat')
+    parser.add_argument('--host', type=str,
+                    help='L\'ip du serveur hôte', default="127.0.0.1")
+    parser.add_argument('--port', type=int,
+                    help='Le port du serveur hôte', default=1234)
+    return parser.parse_args()
 
+def encrypt(payload): # pour automatiser encryption
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return cipher.encrypt(pad(payload, AES.block_size))
 
-def main(host="127.0.0.1", port=1234):
+def decrypt(payload): # pour automatiser decryption
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return unpad(cipher.decrypt(payload), AES.block_size).decode()
+
+def main(host, port):
     global username
     cipher = AES.new(key, AES.MODE_CBC, iv)
     user = input("Username: ") or "default"
@@ -39,7 +54,7 @@ def main(host="127.0.0.1", port=1234):
     payload = (challenge + ";" + user + "," + password).encode()
     try:
         client_socket.connect((host, port))
-        client_socket.send(cipher.encrypt(pad(payload, AES.block_size)))
+        client_socket.send(encrypt(payload))
         synced = client_socket.recv(1024).decode() # on attend la réponse du serveur pour continuer
         if not "synced" in synced:
             raise ChallengeRefused("You're not allowed to access to this server...")
@@ -120,20 +135,16 @@ def interactive(host):
 
 
 if __name__ == "__main__":
+    args = arg_parse()
     # commun à tous les clients
-    client_socket = socket.socket()
-    if len(sys.argv) == 3:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
-        print("Connecting to host: ", host, "with port: ", port)
-        main(host, port)
-    elif len(sys.argv) == 2:
-        host = sys.argv[1]
-        print("Connecting to host: ", host, "with default port")
-        main(host)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if len(sys.argv) > 1: # si le client donne un argument ou plus 
+        print("Connecting to host: ", args.host, "with port: ", args.port)
     else:
         print("Connecting to default host and port (localhost:1234)")
-        main()
+    main(args.host, args.port) # lancer le client
+
+    
         
         
 
