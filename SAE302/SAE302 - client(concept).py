@@ -17,7 +17,6 @@ iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environne
 cipher = AES.new(key, AES.MODE_CBC, iv)
 
 
-
 class ChallengeRefused(Exception): # erreur customisée en lien avec le challenge
     def __init__(self, message):
         super().__init__(message)
@@ -25,6 +24,9 @@ class ChallengeRefused(Exception): # erreur customisée en lien avec le challeng
 class ConnectionClosedByServer(Exception):
     def __init__(self, message):
         super().__init__(message)
+        
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
 
 # Instancier les arguments
 def arg_parse():
@@ -63,19 +65,23 @@ def main(host, port):
     except ConnectionRefusedError as err:
         print(Fore.RED + " \nLa connexion n'a pas aboutie, vérifiez que le serveur est bien lancé et que l'adresse est correcte")
     else:
+        global room
         username = synced.split(',')[1]
+        room = synced.split(',')[2].lstrip()
         #print(Fore.GREEN + "You're connected to the server !")
+        cls()
         print(Fore.GREEN + f"Welcome {username} !") 
         interactive(host)
         
     return 0 #print(host,port,challenge)
 
 def send(socket, host):
+    global room
     global connected
     global msg
     while connected:
         try:
-            msg = input(f"{username}@{host} $:")
+            msg = input(f"{username}@{room} $:")
             print("\033[1A\033[2K",end="")  # up + clear line 
             print(f"you: ",msg, end="\n") if msg else None
             #print('\033[1F',f'\n', end="") if msg else None # descebdre le curseur et afficher le prompt
@@ -95,14 +101,59 @@ def send(socket, host):
     return 0
 
 def receive(socket, host):
+    global room
     global connected
     global msg # récupérer le dernier msg envoyé par le client
     while connected:
         try:
             reply = socket.recv(1024).decode()
-            print("\r\033[2K",end="")  # carriage return + clear line 
+            print("\r\033[2K",end="")  # carriage return + clear line
+            
+            if "cmd:" in reply:
+                cls()
+                reply = reply.split("cmd:")[1]
+                if "alw:" in reply:
+                    for a in reply.split(","):
+                        if "alw:" in a:
+                            print(Fore.GREEN + a.split("alw:")[1] + " (Unlocked)")
+                        else:
+                            print(Fore.RED + a + " (Locked)")
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                    
+            elif "users:" in reply: # le serveur renvoie la liste des utilisateurs
+                reply = reply.split("users:")[1].split(",")
+                cls()
+                for user in reply:
+                    if user == username:
+                        print(Fore.GREEN + user + " (You)")
+                    else:
+                        print(Fore.YELLOW + user)
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                
+            elif "jn:" in reply: # le serveur renvoie la réponse du /join
+                cls()
+                reply = reply.split("jn:")[1]
+                
+                if "Succès" in reply:
+                    room = reply.split(":")[1]
+                    print(Fore.GREEN + f" Bienvenue dans le salon {room} !")
+                else:
+                    print(Fore.RED + reply)
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                
+            elif "fwd:" in reply: # le serveur forward une réponse d'un client dans le même salon
+                fwd_user, fwd_reply = reply.split("fwd:")[1].split(":")[0], reply.split("fwd:")[1].split(":")[1]
+                print(Fore.LIGHTBLUE_EX + f"{fwd_user}: {Fore.RESET}{fwd_reply}", end="")
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                
+            
             print(f"server: ",reply, end="") if reply else None
-            print('\033[1F',f'\n{username}@{host} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+            print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+            
             if reply == "bye" or reply == "arret":
                 connected = False
                 socket.close()

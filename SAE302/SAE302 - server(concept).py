@@ -9,11 +9,13 @@ import hashlib
 import os
 import mysql.connector
 from mysql.connector import Error
+import keyboard
 
 
 # gestion des droits utilisateurs
 class user_capabilities(object):
     all_rooms = ["General","Blabla","Comptabilité", "Informatique", "Marketing"]
+    current_room = "General"
     def __init__(self, username, allowed_room, is_admin):
         self.__username = username
         self.__allowed_room = allowed_room
@@ -88,6 +90,8 @@ default_pseudo =  ["Nosferatu","BlackBird","Pleiades","Hyades","Undertaker","Blo
     "Argos","Vulture","Estoc","Grimoire","Gungnir","GaeBolg","Excalibur","Durandal","ClaiomhSolais",\
 "Caladbolg","Balmung","AmeNoMurakumo"]
 
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
 
 # récupérer le pseudo à partir de la valeur "socket"
 def username(dictionary, value):
@@ -167,8 +171,9 @@ def update_userinfo_sql(user, value, reason, socket):
             connection.commit()
         elif reason == "roomupdate":
             query = "UPDATE users SET allowed_room = %s WHERE username = %s"
+            user_caps[socket].allowed_room += "," + value
+            value = user_caps[socket].allowed_room
             cursor.execute(query, (value, user))
-            user_caps[socket].allowed_room = value
             connection.commit()
         elif reason == "password":
             query = "UPDATE users SET password = %s WHERE username = %s"
@@ -218,14 +223,14 @@ def send(socket, host):
             if "bye" in msg and len(msg) > 3:
                 username = msg.split(" ")[1]
                 try:
-                    target_socket = socket_list[username] # essaie de récupérer le socket avec le username
+                    target_socket = socket_list[f"{username}"] # essaie de récupérer le socket avec le username
                 except KeyError as err:
-                    print(Fore.RED + f"Le pseudo {username} n'existe pas", end=f'\n{Fore.RESET}')
+                    print(Fore.RED + f"Le pseudo {username} n'existe pas \n ou l'utilisateur n'est pas connecté", end=f'\n{Fore.RESET}')
                     pass
                 else:
                     username, target_socket = socket_list.popitem()
                     target_socket.send("bye".encode())
-                    target_socket.send("recon".encode())
+                    #target_socket.send("recon".encode())
             if msg == "arret":
                 hostup = False
                 break
@@ -265,9 +270,70 @@ def receive(socket, host):
             print("\033[2K", end="\r ")  # carriage return + clear line
             print(f"{username(socket_list,socket)}: {reply}")
             print('\033[1F', f'\nserver@{host} $:', end="") if reply else None
+            
+            
+            if not "/" in reply and not reply == "bye" and not reply == "arret":
+                
+                target_list = [a if \
+                    (user_caps[a].current_room == user_caps[socket].current_room)  \
+                        and a != socket else None for a in socket_list.values()]
+            
+                for user_target in target_list:
+                    user_target.send(f"fwd:{username(socket_list,socket)}:{reply}".encode()) \
+                        if user_target else None
+            
+            
+            
             if reply == "arret":
                 hostup = False
                 break
+            if reply == "/rooms":
+                # Cette variable contient les rooms disponibles et ajoute le flag alw: si le client possède un accès à la room 
+                available_rooms = ",".join([f"alw:{a}" if a in user_caps[socket].allowed_room \
+                    else a for a in user_caps[socket].all_rooms ]) 
+                socket.send(b'cmd:' + str(available_rooms).encode())
+                
+            if reply == "/users":
+                # Cette variable contient les users connectés et ajoute le flag alw: si le client possède un accès à la room 
+                available_users = ",".join([a for a in socket_list.keys()]) 
+                socket.send(b'users:' + str(available_users).encode())
+                
+            if "/subscribe" in reply:
+                if len(reply.split(" ")) > 1:
+                    room = reply.split(" ")[1]
+                else:
+                    room = None
+                
+                if (room in user_caps[socket].all_rooms and user_caps[socket].is_admin == 1) or (room == "Blabla"):
+                    update_userinfo_sql(username(socket_list,socket), room, "roomupdate", socket) \
+                        if not room in user_caps[socket].allowed_room else None
+                    socket.send(b'scb:' + str("Votre demande a été acceptée").encode())
+                    
+                elif (room in user_caps[socket].all_rooms):
+                    cls()
+                    print("Une demande d'abonnement à la room", room, "a été reçue, veuillez appuyer sur entrée pour donner une réponse")
+                    if (response := input(f"Voulez-vous vraiment abonner {username(socket_list,socket)} à la room {room} ? (y/n) ")) == "y":
+                        update_userinfo_sql(username(socket_list,socket), room, "roomupdate", socket) \
+                            if not room in user_caps[socket].allowed_room else None
+                        socket.send(b'scb:' + str("Votre demande a été acceptée").encode())
+                    else:
+                        socket.send(b'scb:' + str("Votre demande a été refusée ou vous ne disposer pas des droits").encode())    
+                else:
+                    socket.send(b'scb:' + str("Votre demande a été refusée ou vous ne disposer pas des droits").encode())
+                
+            if "/join" in reply:
+                if len(reply.split(" ")) > 1:
+                    room = reply.split(" ")[1]
+                else:
+                    room = None
+                
+                if (room in user_caps[socket].allowed_room):
+                    user_caps[socket].current_room = room
+                    socket.send(f"jn: Succès:{room}".encode())
+                else:
+                    socket.send(f"jn: Vous ne disposez pas d'accès au salon {room}, veuillez vous y souscrire..".encode())
+                    
+            
             reply = None
     socket.close()
 
@@ -298,8 +364,7 @@ while connected:
         conn.close()
     else:
         #message_2 = conn.recv(1024).decode()
-        client_challenge = message_1.split(";")[0].split(",")
-        credentials = message_1.split(";")[1].split(",")
+        client_challenge, credentials = message_1.split(";")[0].split(","), message_1.split(";")[1].split(",")
         connect_condition = lambda x: int(x) % 2 == 0
         client_condition = all(connect_condition(elem) for elem in client_challenge)
     if client_condition:
@@ -310,7 +375,7 @@ while connected:
         # ajouter au dictionnaire socket_list une entrée avec clé le pseudonyme et comme valeur le socket
         if is_auth:
             socket_list[f"{unique_pseudo}"] = conn
-            conn.send(f"synced,{unique_pseudo}".encode())
+            conn.send(f"synced,{unique_pseudo},{user_caps[conn].current_room}".encode())
             threading.Thread(target=interactive, args=(conn, host)).start()
             conn.close() if not connected else None
     else:
