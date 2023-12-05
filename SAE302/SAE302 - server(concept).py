@@ -143,6 +143,7 @@ def user_sql_handler(user, password, socket):
                 print("Utilisateur non trouvé, création d'un nouvel utilisateur...")
                 cursor.execute("INSERT INTO users (username, password, allowed_room) VALUES (%s, %s, %s)", (user, password, str("General")))
                 connection.commit()
+                user_caps[socket] = user_capabilities(user, password, str("General")) # pour nouveau utilisateur 
         return True
     except Error as e:
         print("Erreur de connexion à la base de données", e)
@@ -177,6 +178,11 @@ def update_userinfo_sql(user, value, reason, socket):
             connection.commit()
         elif reason == "password":
             query = "UPDATE users SET password = %s WHERE username = %s"
+            cursor.execute(query, (value, user))
+            connection.commit()
+        elif reason == "roomdowngrade":
+            query = "UPDATE users SET allowed_room = %s WHERE username = %s"
+            user_caps[socket].allowed_room = value
             cursor.execute(query, (value, user))
             connection.commit()
         else:
@@ -244,6 +250,27 @@ def send(socket, host):
                 update_userinfo_sql(username, 0, "upgrade", socket)
                 #print(user_caps[socket])
                 
+            if "/users" in msg:
+                available_users = [a for a in socket_list.keys()]
+                cls()
+                for user in available_users:
+                    print(Fore.GREEN + user + f" ({user_caps[socket_list[user]].current_room})", end=f'\n{Fore.RESET}')
+                print(f'\nserver@{host} $:', end="") if msg else None
+                
+            if "/unsubscribe" in (msg_d:= msg.split(" ")):
+                if len(msg_d) > 1:
+                    username = msg.split(" ")[1]
+                    room = msg.split(" ")[2]
+                    if user_caps[socket].current_room == room: # pour éviter des conflits (forcé côté client également)
+                            user_caps[socket].current_room = "General"
+                    else:
+                        pass
+                    new_room = ",".join([a for a in user_caps[socket].allowed_room.split(",") if not a == room])
+                    update_userinfo_sql(username, new_room, "roomdowngrade", socket)
+                    #print(user_caps[socket])
+                else:
+                    print(Fore.RED + "La commande n'est pas valide, veuillez réessayer\nsyntaxe : /unsubscribe [user] [room]", end=f'\n{Fore.RESET}')
+                
                 
             msg = None
     socket.close()
@@ -268,7 +295,7 @@ def receive(socket, host):
             break
         else:
             print("\033[2K", end="\r ")  # carriage return + clear line
-            print(f"{username(socket_list,socket)}: {reply}")
+            print(f"{username(socket_list,socket)}: {reply}") if not "/" in reply else None
             print('\033[1F', f'\nserver@{host} $:', end="") if reply else None
             
             
@@ -332,6 +359,25 @@ def receive(socket, host):
                     socket.send(f"jn: Succès:{room}".encode())
                 else:
                     socket.send(f"jn: Vous ne disposez pas d'accès au salon {room}, veuillez vous y souscrire..".encode())
+            
+            if "/unsubscribe" in reply:
+                if len(reply.split(" ")) > 1:
+                    room = reply.split(" ")[1]
+                    
+                    if user_caps[socket].current_room == room: # pour éviter des conflits (forcé côté client également)
+                        user_caps[socket].current_room = "General"
+                    else:
+                        pass
+                    
+                    new_room = ",".join([a for a in user_caps[socket].allowed_room.split(",") if not a == room])
+                else:
+                    room = None
+                
+                if (room in user_caps[socket].allowed_room):
+                    update_userinfo_sql(username(socket_list,socket), new_room, "roomdowngrade", socket)
+                    socket.send(f"us: Vous avez été désabonné de la room {room}".encode())
+                else:
+                    socket.send(f"us: Vous ne disposez pas d'accès au salon {room}, veuillez vous y souscrire..".encode())
                     
             
             reply = None
@@ -371,7 +417,7 @@ while connected:
         unique_pseudo = random.choice(default_pseudo, replace=False) \
             if credentials[0] == "default" \
                 else credentials[0]  # choisir un pseudo unique si pas de user dans credentials
-        is_auth = user_sql_handler(credentials[0], credentials[1], conn)
+        is_auth = user_sql_handler(unique_pseudo, credentials[1], conn)
         # ajouter au dictionnaire socket_list une entrée avec clé le pseudonyme et comme valeur le socket
         if is_auth:
             socket_list[f"{unique_pseudo}"] = conn

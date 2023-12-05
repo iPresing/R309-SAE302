@@ -90,6 +90,10 @@ def send(socket, host):
                 connected = False
                 socket.close()
                 break
+            
+            if "/unsubscribe" in msg:
+                room = "General"
+                cls()
             msg = None
         except ConnectionAbortedError as err:
             print(Fore.RED + "\rLa connexion a été interrompue par le serveur") \
@@ -139,6 +143,18 @@ def receive(socket, host):
                 if "Succès" in reply:
                     room = reply.split(":")[1]
                     print(Fore.GREEN + f" Bienvenue dans le salon {room} !")
+                else:
+                    print(Fore.RED + reply)
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                
+            elif "us:" in reply: # le serveur renvoie la réponse du /unsubscribe
+                cls()
+                reply = reply.split("us:")[1]
+                
+                if "désabonné" in reply:
+                    room = "General"
+                    print(Fore.GREEN + f" Vous avez bien été désabonné du salon !")
                 else:
                     print(Fore.RED + reply)
                 print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
