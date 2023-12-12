@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
 import argparse
+from scapy.all import *
 
 # configuration client
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
@@ -35,6 +36,8 @@ def arg_parse():
                     help='L\'ip du serveur hôte', default="127.0.0.1")
     parser.add_argument('--port', type=int,
                     help='Le port du serveur hôte', default=1234)
+    parser.add_argument('--search', action='store_true',
+                    help='Activer la recherche (flag)', default=False)
     return parser.parse_args()
 
 def encrypt(payload): # pour automatiser encryption
@@ -166,6 +169,11 @@ def receive(socket, host):
                 print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
                 reply = None
                 
+            elif "old:" in reply:
+                restore_old_messages(reply)
+                print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
+                reply = None
+                
             
             print(f"server: ",reply, end="") if reply else None
             print('\033[1F',f'\n{username}@{room} $:', end="") if reply else None # descebdre le curseur et afficher le prompt
@@ -189,10 +197,22 @@ def receive(socket, host):
         
     return 0
 
+def restore_old_messages(payload):
+    all_messages = payload.split("old:")[1].split(",")
+    
+    # restaure les messages du salon actuel
+    for message in all_messages:
+        print(Fore.LIGHTBLUE_EX + f"{message.split(':')[0]}: {Fore.RESET}{message.split(':')[1]}".lstrip()) \
+            if message.split(':')[0] != username \
+                else print(f"you: {Fore.RESET}{message.split(':')[1]}".lstrip())
+                
+    return 0
+
+
 def interactive(host):
     global connected
     connected = True
-    print("Interactive mode")
+    #print("Interactive mode", end="\n")
     #send(client_socket,host) # ne pas le mettre dans un thread pour qu'il puisse gérer activement l'input
     threading.Thread(target=receive, args=(client_socket,host)).start()
     send(client_socket,host) # ne pas le mettre dans un thread pour qu'il puisse gérer activement l'input
@@ -200,16 +220,36 @@ def interactive(host):
     
     return 0 
 
+def handle_announcement(pkt):
+    if pkt.haslayer(IP) and pkt.haslayer(UDP):
+        load = pkt[Raw].load.decode('utf-8')
+        if "Server announcement" in load:
+            print("Received announcement:", load)
+            server_ip = pkt[IP].src
+            server_port = load.split(":")[2]
+            print("Server IP:", server_ip)
+            print("Server Port:", server_port)
+            print("Connecting to host:", server_ip, "with port:", server_port, end="\n")
+            main(server_ip, server_port)
+            sys.exit(0)
+   
 
 if __name__ == "__main__":
+     # commun à tous les clients
     args = arg_parse()
-    # commun à tous les clients
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if len(sys.argv) > 1: # si le client donne un argument ou plus 
-        print("Connecting to host: ", args.host, "with port: ", args.port)
+    if args.search == True or args.search == 1:
+        print("searching for server...")
+        client_ports = 9999
+        filters = f"udp port {client_ports}"
+        sniff(prn=handle_announcement, filter=filters, store=0, iface="Wi-Fi", timeout=20, count=1)
     else:
-        print("Connecting to default host and port (localhost:1234)")
-    main(args.host, args.port) # lancer le client
+        #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if len(sys.argv) > 1: # si le client donne un argument ou plus 
+            print("Connecting to host: ", args.host, "with port: ", args.port)
+        else:
+            print("Connecting to default host and port (localhost:1234)")
+        main(args.host, args.port) # lancer le client
 
     
         
