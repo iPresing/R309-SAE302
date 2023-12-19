@@ -3,5 +3,8 @@ SAE302/backup_server
 SAE302/utilisateurs.py
 SAE302/GUI/*.ui
 SAE302/GUI/*.bak
+SAE302/GUI/*.old
+SAE302/GUI/*.sql
 SAE302/GUI/*example.*
 toto/gui.py
+SAE302/GUI/requirements.txt

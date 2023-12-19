@@ -2,16 +2,29 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
-import threading, socket, random, os, sys, argparse
+import threading, socket, random, os, sys, argparse, psutil
 from scapy.all import *
+from subprocess import getoutput as getResults
+from colorama import init, Fore, Back, Style
 
 
 global connected
 global room
+init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
 connected = False
 key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
 iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
 cipher = AES.new(key, AES.MODE_CBC, iv)
+
+
+# variable global nommé logout_signal composée de 32 caractères aléatoires
+global logout_signal
+logout_signal = "".join([chr(random.randint(65, 90)) for i in range(32)])
+
+
+# variable global nommée error_signal composée de 33 caractères aléatoires
+global error_signal
+error_signal = "".join([chr(random.randint(65, 90)) for i in range(33)])
 #host = "127.0.0.1"
 #port = 1234
 
@@ -20,6 +33,14 @@ class ChallengeRefused(Exception): # erreur customisée en lien avec le challeng
         super().__init__(message)
         
 class ConnectionClosedByServer(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        
+class KickedFromRoom(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        
+class BannedFromServer(Exception):
     def __init__(self, message):
         super().__init__(message)
         
@@ -59,20 +80,31 @@ class ReceiveThread(QThread):
         while not self.stopThread:
             try:
                 reply = client_socket.recv(1024).decode()
+                
+                if reply == 'bye':
+                    raise ConnectionClosedByServer("Connection closed by server")
+                
+                elif reply.startswith('jn:') and 'kick' in reply:
+                    
+                    TimeKick = reply.split('time:')[1]
+                    
+                    raise KickedFromRoom(str(TimeKick))
+                
                 if reply:
                     self.messageReceived.emit(reply)
             except ConnectionClosedByServer:
-                self.messageReceived.emit("Déconnexion")
+                self.messageReceived.emit(logout_signal)
                 break
             except ConnectionResetError:
-                self.messageReceived.emit("Error: La connexion a été réinitialisée par le serveur")
+                self.messageReceived.emit(logout_signal)
+                #self.messageReceived.emit(f"{error_signal}: La connexion a été réinitialisée par le serveur")
                 break
             except ConnectionAbortedError:
-                self.messageReceived.emit("Error: La connexion a été interrompue par le serveur")
+                self.messageReceived.emit(f"{error_signal}: La connexion a été interrompue par le serveur")
                 break
-
-            
-        return 0
+            except KickedFromRoom as e:
+                self.messageReceived.emit(f"{error_signal}: Vous avez été kick de la room jusque {str(e)}")
+                pass
 # application graphique PyQt6 page de connexion
 class Login(QWidget):
     connected = False
@@ -120,7 +152,7 @@ class Login(QWidget):
         
     def __init__(self):
         super().__init__()
-        client_socket_create()
+        #client_socket_create()
         self.setWindowTitle("Login")
         #self.resize(1000, 1000)
         #self.setGeometry(100, 100, 600, 400)
@@ -146,6 +178,7 @@ class Login(QWidget):
         #self.register_button.clicked.connect(self.register)
         self.show()
     def login(self):
+        client_socket_create()
         username = self.username.text() or "default"
         password = self.password.text()
         if not password:
@@ -162,10 +195,18 @@ class Login(QWidget):
             client_socket.send(encrypt(payload))
             synced = client_socket.recv(1024).decode() # on attend la réponse du serveur pour continuer
             print(synced)
-            if not "synced" in synced:
+            #if not "synced" in synced:
+           
+            if "banni" in synced:
+                raise BannedFromServer(synced)
+            elif not synced.startswith("synced"):
                 raise ChallengeRefused("Challenge refused")
                 #connected = True
                 #widgets.setCurrentIndex(widgets.currentIndex() + 1)
+            
+        except BannedFromServer as e:
+            QMessageBox.critical(self, "Error", f"{str(e)}")
+            pass
         except ChallengeRefused as err:
             QMessageBox.critical(self, "Error", "Vous n'êtes pas autorisé à accéder à ce serveur...")
             pass
@@ -305,6 +346,8 @@ class ChatApp(QWidget):
         else:
             room = button_room.text()
             client_socket.send(f"/subscribe {room}".encode())
+        client_socket.send("/rooms".encode()) # pour rafraîchir           
+        
     def close(self):
         self.EditConnected = False
         #global connected
@@ -356,21 +399,44 @@ class ChatApp(QWidget):
         for message in all_messages:
             self.message_list.addItem(f"{message.split(':')[0]}: {message.split(':')[1]}" \
                 if message.split(':')[0] != self.username \
-                    else f"you: {message.split(':')[1]}")
+                    else f"Vous: {message.split(':')[1]}")
             
                     
         return 0
     
     
     def handleReceivedMessage(self, message):
+        print(error_signal, logout_signal)
         
-        if message.startswith("Error:"):
-            QMessageBox.critical(self, "Error", message[len("Error:"):])
-        elif message == "Déconnexion":
+        if message.startswith(error_signal):
+            QMessageBox.critical(self, "Error", message[len(f"{error_signal}:"):])
+            #self.close()
+        elif message == logout_signal:
             QMessageBox.information(self, "Déconnexion", "Vous avez bien été déconnecté du serveur")
+            self.close()
             #self.showMessageSignal.emit("Déconnexion", "Vous avez bien été déconnecté du serveur")
-        elif "cmd:" in message:
-            message = message.split("cmd:")[1]
+        elif message.startswith("cmd:"):
+            message = message.split("cmd:")[1].split(',')
+            
+            for room in message:
+                if "General" in room:
+                    self.general_room.setStyleSheet("background-color: {color};"\
+                        .format(color="lightgreen" if room.startswith("alw:") else "red"))
+                elif "Blabla" in room:
+                    self.blabla_room.setStyleSheet("background-color: {color};"\
+                        .format(color="lightgreen" if room.startswith("alw:") else "red"))
+                elif "Comptabilité" in room:
+                    self.compta_room.setStyleSheet("background-color: {color};"\
+                        .format(color="lightgreen" if room.startswith("alw:") else "red"))
+                elif "Informatique" in room:
+                    self.info_room.setStyleSheet("background-color: {color};"\
+                        .format(color="lightgreen" if room.startswith("alw:") else "red"))
+                elif "Marketing" in room:
+                    self.market_room.setStyleSheet("background-color: {color};"\
+                        .format(color="lightgreen" if room.startswith("alw:") else "red"))
+                else:
+                    pass
+            """
             if "alw:" in message:
                 for a in message.split(","):
                     if "alw:" in a:
@@ -387,9 +453,10 @@ class ChatApp(QWidget):
                         self.market_room.setStyleSheet("background-color: lightgreen;")
                     else:
                         pass
+            """
             message = None
         
-        elif "scb" in message: # le serveur renvoie la réponse du /subscribe
+        elif message.startswith("scb:"): # le serveur renvoie la réponse du /subscribe
             message = message.split("scb:")[1]
             
             if "accept" in message:
@@ -402,10 +469,10 @@ class ChatApp(QWidget):
                 #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous ne pouvez pas accéder à la room"))
             message = None
             
-        elif "users:" in message: # le serveur renvoie la liste des utilisateurs
+        elif message.startswith("users:"): # le serveur renvoie la liste des utilisateurs
             pass # à faire plus tard
         
-        elif "jn:" in message: # le serveur renvoie la réponse du /join
+        elif message.startswith("jn:"): # le serveur renvoie la réponse du /join
             message = message.split("jn:")[1]
             if "Succès" in message:
                 self.room = message.split(":")[1]
@@ -436,11 +503,11 @@ class ChatApp(QWidget):
                 #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu rejoindre la room"))
             message = None
             
-        elif "us:" in message: # le serveur renvoie la réponse du /unsubscribe
+        elif message.startswith("us:"): # le serveur renvoie la réponse du /unsubscribe
             message = message.split("us:")[1]
             if "désabonné" in message:
+                #client_socket.send("/rooms".encode())
                 self.join(self.general_room)
-                client_socket.send("/rooms".encode())
                 #QMessageBox.information(self, "Info", "Vous avez bien quitté la room")
                 #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous avez bien quitté la room"))
             else:
@@ -449,20 +516,21 @@ class ChatApp(QWidget):
                 #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu quitter la room"))
             message = None
             
-        elif "fwd:" in message: # le serveur renvoie la réponse du /forward
+        elif message.startswith("fwd:"): # le serveur renvoie la réponse du /forward
             fwd_user, fwd_message = message.split("fwd:")[1].split(":")[0], message.split("fwd:")[1].split(":")[1]
             self.message_list.addItem(f"{fwd_user}: {fwd_message}")
             message = None
             
-        elif "old:" in message: # le serveur renvoie les anciens messages
+        elif message.startswith("old:"): # le serveur renvoie les anciens messages
             self.restore_old_messages(message)
             message = None
         
+        """
         if message == "bye" or message == "arret":
             self.EditConnected = False
             client_socket.close()
             raise ConnectionClosedByServer("Closed connection")
-        
+        """
         if message:
             self.message_list.addItem(f"server:{message}")
             message = None
@@ -628,7 +696,35 @@ def client_socket_create():
     
     return 0
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0] # récupérer l'adresse ip de l'interface
+    except Exception as e:
+        pass
+    finally:
+        s.close()
+    
+    return str(ip)
 
+def get_interface_name_by_ip(ip_address):
+    try:
+        # Utiliser socket pour résoudre le nom d'hôte associé à l'adresse IP
+        hostname, _, _ = socket.gethostbyaddr(ip_address)
+
+        # Utiliser psutil pour obtenir les informations sur les interfaces réseau
+        for interface, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.address == ip_address or addr.address == hostname:
+                    return interface
+
+        # Si aucune correspondance n'est trouvée
+        return None
+
+    except (socket.herror, KeyError):
+        # Gérer les erreurs en cas de résolution d'adresse IP ou si l'adresse IP n'est pas trouvée dans les interfaces
+        return None
 def handle_announcement(pkt):
     global port, host
     if pkt.haslayer(IP) and pkt.haslayer(UDP):
@@ -648,10 +744,17 @@ if __name__ == "__main__":
     args = arg_parse()
     
     if args.search:
-        print("searching for server...")
-        client_ports = 9999
-        filters = f"udp port {client_ports}"
-        sniff(prn=handle_announcement, filter=filters, store=0, iface="Wi-Fi", timeout=20, count=1)
+        vm_check = True if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() else False
+        #vm_check = False
+        if not vm_check:
+            c_iface = get_interface_name_by_ip(get_ip())
+            print("searching for server...")
+            client_ports = 9999
+            filters = f"udp port {client_ports}"
+            sniff(prn=handle_announcement, filter=filters, store=0, iface=c_iface, timeout=20, count=1)
+        else:
+            print(Fore.RED + "Vous ne pouvez pas lancer le client en mode recherche depuis une machine virtuelle." + Fore.YELLOW + "\nIl est important de noter que vous devriez mettre le serveur sur cette VM et les clients sur des machines physiques.(pour que ça puisse fonctionner)")
+            sys.exit()
     else:
         host = args.host
         port = args.port

@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
 import argparse
+import psutil
 from scapy.all import *
 
 # configuration client
@@ -219,7 +220,35 @@ def interactive(host):
     #threading.Thread(target=send, args=(client_socket,host)).start()
     
     return 0 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0] # récupérer l'adresse ip de l'interface
+    except Exception as e:
+        pass
+    finally:
+        s.close()
+    
+    return str(ip)
 
+def get_interface_name_by_ip(ip_address):
+    try:
+        # Utiliser socket pour résoudre le nom d'hôte associé à l'adresse IP
+        hostname, _, _ = socket.gethostbyaddr(ip_address)
+
+        # Utiliser psutil pour obtenir les informations sur les interfaces réseau
+        for interface, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.address == ip_address or addr.address == hostname:
+                    return interface
+
+        # Si aucune correspondance n'est trouvée
+        return None
+
+    except (socket.herror, KeyError):
+        # Gérer les erreurs en cas de résolution d'adresse IP ou si l'adresse IP n'est pas trouvée dans les interfaces
+        return None
 def handle_announcement(pkt):
     if pkt.haslayer(IP) and pkt.haslayer(UDP):
         load = pkt[Raw].load.decode('utf-8')
@@ -239,10 +268,11 @@ if __name__ == "__main__":
     args = arg_parse()
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if args.search == True or args.search == 1:
+        c_iface = get_interface_name_by_ip(get_ip())
         print("searching for server...")
         client_ports = 9999
         filters = f"udp port {client_ports}"
-        sniff(prn=handle_announcement, filter=filters, store=0, iface="Wi-Fi", timeout=20, count=1)
+        sniff(prn=handle_announcement, filter=filters, store=0, iface=c_iface, timeout=20, count=1)
     else:
         #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if len(sys.argv) > 1: # si le client donne un argument ou plus 
