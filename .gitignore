@@ -1,96 +1,257 @@
-# Ignorez les fichiers liés au module Client-Serveur/utilisateurs.py
-Client-Serveur/utilisateurs.py
-
-
-# Ignorez les fichiers de sauvegarde et les fichiers liés à l'interface graphique dans le répertoire SAE302
-SAE302/
-  backup_server
-  utilisateurs.py
-  GUI/
-    *.ui
-    *.bak
-    *.old
-    *.sql
-    *example.*
-
-
-# Ignorez fichier gui.py dans le répertoire toto
+SAE302/backup_server
+SAE302/utilisateurs.py
+SAE302/GUI/*.ui
+SAE302/GUI/*.bak
+SAE302/GUI/*.old
+SAE302/GUI/*.sql
+SAE302/GUI/*example.*
 toto/gui.py
-
-
-# Ignorez le fichier requirements.txt lié à l'interface graphique
 SAE302/GUI/requirements.txt
+SAE302/Docs/_build/doctrees/client.doctree
+SAE302/Docs/_build/doctrees/environment.pickle
+SAE302/Docs/_build/doctrees/GUI.doctree
+SAE302/Docs/_build/doctrees/index.doctree
+SAE302/Docs/_build/doctrees/modules.doctree
+SAE302/Docs/_build/doctrees/server.doctree
+SAE302/Docs/_build/doctrees/docs/conf.doctree
+SAE302/Docs/_build/doctrees/docs/modules.doctree
+SAE302/Docs/_build/html/.buildinfo
+SAE302/Docs/_build/html/client.html
+SAE302/Docs/_build/html/genindex.html
+SAE302/Docs/_build/html/GUI.html
+SAE302/Docs/_build/html/index.html
+SAE302/Docs/_build/html/modules.html
+SAE302/Docs/_build/html/objects.inv
+SAE302/Docs/_build/html/py-modindex.html
+SAE302/Docs/_build/html/search.html
+SAE302/Docs/_build/html/searchindex.js
+SAE302/Docs/_build/html/server.html
+SAE302/Docs/_build/html/_modules/client.html
+SAE302/Docs/_build/html/_modules/index.html
+SAE302/Docs/_build/html/_modules/server.html
+SAE302/Docs/_build/html/_modules/GUI/gui.html
+SAE302/Docs/_build/html/_sources/client.rst.txt
+SAE302/Docs/_build/html/_sources/GUI.rst.txt
+SAE302/Docs/_build/html/_sources/index.rst.txt
+SAE302/Docs/_build/html/_sources/modules.rst.txt
+SAE302/Docs/_build/html/_sources/server.rst.txt
+SAE302/Docs/_build/html/_sources/docs/conf.rst.txt
+SAE302/Docs/_build/html/_sources/docs/modules.rst.txt
+SAE302/Docs/_build/html/_static/_sphinx_javascript_frameworks_compat.js
+SAE302/Docs/_build/html/_static/base-stemmer.js
+SAE302/Docs/_build/html/_static/basic.css
+SAE302/Docs/_build/html/_static/doctools.js
+SAE302/Docs/_build/html/_static/documentation_options.js
+SAE302/Docs/_build/html/_static/file.png
+SAE302/Docs/_build/html/_static/french-stemmer.js
+SAE302/Docs/_build/html/_static/jquery.js
+SAE302/Docs/_build/html/_static/language_data.js
+SAE302/Docs/_build/html/_static/minus.png
+SAE302/Docs/_build/html/_static/plus.png
+SAE302/Docs/_build/html/_static/pygments.css
+SAE302/Docs/_build/html/_static/searchtools.js
+SAE302/Docs/_build/html/_static/sphinx_highlight.js
+SAE302/Docs/_build/html/_static/translations.js
+SAE302/Docs/_build/html/_static/css/badge_only.css
+SAE302/Docs/_build/html/_static/css/theme.css
+SAE302/Docs/_build/html/_static/css/fonts/fontawesome-webfont.eot
+SAE302/Docs/_build/html/_static/css/fonts/fontawesome-webfont.svg
+SAE302/Docs/_build/html/_static/css/fonts/fontawesome-webfont.ttf
+SAE302/Docs/_build/html/_static/css/fonts/fontawesome-webfont.woff
+SAE302/Docs/_build/html/_static/css/fonts/fontawesome-webfont.woff2
+SAE302/Docs/_build/html/_static/css/fonts/lato-bold-italic.woff
+SAE302/Docs/_build/html/_static/css/fonts/lato-bold-italic.woff2
+SAE302/Docs/_build/html/_static/css/fonts/lato-bold.woff
+SAE302/Docs/_build/html/_static/css/fonts/lato-bold.woff2
+SAE302/Docs/_build/html/_static/css/fonts/lato-normal-italic.woff
+SAE302/Docs/_build/html/_static/css/fonts/lato-normal-italic.woff2
+SAE302/Docs/_build/html/_static/css/fonts/lato-normal.woff
+SAE302/Docs/_build/html/_static/css/fonts/lato-normal.woff2
+SAE302/Docs/_build/html/_static/css/fonts/Roboto-Slab-Bold.woff
+SAE302/Docs/_build/html/_static/css/fonts/Roboto-Slab-Bold.woff2
+SAE302/Docs/_build/html/_static/css/fonts/Roboto-Slab-Regular.woff
+SAE302/Docs/_build/html/_static/css/fonts/Roboto-Slab-Regular.woff2
+SAE302/Docs/_build/html/_static/js/badge_only.js
+SAE302/Docs/_build/html/_static/js/html5shiv-printshiv.min.js
+SAE302/Docs/_build/html/_static/js/html5shiv.min.js
+SAE302/Docs/_build/html/_static/js/theme.js
+SAE302/Docs/_build/html/docs/conf.html
+SAE302/Docs/_build/html/docs/modules.html
+SAE302/Docs/_build/singlehtml/.buildinfo
+SAE302/Docs/_build/singlehtml/index.html
+SAE302/Docs/_build/singlehtml/objects.inv
+SAE302/Docs/_build/singlehtml/_static/_sphinx_javascript_frameworks_compat.js
+SAE302/Docs/_build/singlehtml/_static/base-stemmer.js
+SAE302/Docs/_build/singlehtml/_static/basic.css
+SAE302/Docs/_build/singlehtml/_static/doctools.js
+SAE302/Docs/_build/singlehtml/_static/documentation_options.js
+SAE302/Docs/_build/singlehtml/_static/file.png
+SAE302/Docs/_build/singlehtml/_static/french-stemmer.js
+SAE302/Docs/_build/singlehtml/_static/jquery.js
+SAE302/Docs/_build/singlehtml/_static/language_data.js
+SAE302/Docs/_build/singlehtml/_static/minus.png
+SAE302/Docs/_build/singlehtml/_static/plus.png
+SAE302/Docs/_build/singlehtml/_static/pygments.css
+SAE302/Docs/_build/singlehtml/_static/searchtools.js
+SAE302/Docs/_build/singlehtml/_static/sphinx_highlight.js
+SAE302/Docs/_build/singlehtml/_static/translations.js
+SAE302/Docs/_build/singlehtml/_static/css/badge_only.css
+SAE302/Docs/_build/singlehtml/_static/css/theme.css
+SAE302/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.eot
+SAE302/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.svg
+SAE302/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.ttf
+SAE302/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-bold-italic.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-bold-italic.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-bold.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-bold.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-normal-italic.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-normal-italic.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-normal.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/lato-normal.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Bold.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Bold.woff2
+SAE302/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Regular.woff
+SAE302/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Regular.woff2
+SAE302/Docs/_build/singlehtml/_static/js/badge_only.js
+SAE302/Docs/_build/singlehtml/_static/js/html5shiv-printshiv.min.js
+SAE302/Docs/_build/singlehtml/_static/js/html5shiv.min.js
+SAE302/Docs/_build/singlehtml/_static/js/theme.js
+SAE302/Docs/client.rst
+SAE302/Docs/conf.py
+SAE302/Docs/GUI.rst
+SAE302/Docs/index.rst
+SAE302/Docs/make.bat
+SAE302/Docs/Makefile
+SAE302/Docs/modules.rst
+SAE302/Docs/server.rst
 
-
-# Ignorez les artefacts de construction de la documentation Sphinx
-SAE302/Docs/_build/
-  doctrees/
-    *.doctree
-  html/
-    .buildinfo
-    client.html
-    genindex.html
-    GUI.html
-    index.html
-    modules.html
-    objects.inv
-    py-modindex.html
-    search.html
-    searchindex.js
-    server.html
-    _modules/
-      client.html
-      index.html
-      server.html
-      GUI/
-        gui.html
-    _sources/
-      client.rst.txt
-      GUI.rst.txt
-      index.rst.txt
-      modules.rst.txt
-      server.rst.txt
-      docs/
-        conf.rst.txt
-        modules.rst.txt
-    _static/
-      *.js
-      *.css
-      fonts/
-        *.eot
-        *.svg
-        *.ttf
-        *.woff
-        *.woff2
-
-
-# Ignorez les artefacts de construction HTML unique
-SAE302/Docs/_build/singlehtml/
-  .buildinfo
-  index.html
-  objects.inv
-  _static/
-    *.js
-    *.css
-    fonts/
-      *.eot
-      *.svg
-      *.ttf
-      *.woff
-      *.woff2
-
-
-# Ignorez les fichiers sources de la documentation Sphinx
-SAE302/Docs/
-  client.rst
-  conf.py
-  GUI.rst
-  index.rst
-  make.bat
-  Makefile
-  modules.rst
-  server.rst
-
-
-# Ignorez le répertoire Seleenix/ et son contenu
-Seleenix/
+Seleenix/client.py
+Seleenix/requirements.txt
+Seleenix/server.py
+Seleenix/Docs/client.rst
+Seleenix/Docs/conf.py
+Seleenix/Docs/GUI.rst
+Seleenix/Docs/index.rst
+Seleenix/Docs/make.bat
+Seleenix/Docs/Makefile
+Seleenix/Docs/modules.rst
+Seleenix/Docs/server.rst
+Seleenix/Docs/_build/doctrees/client.doctree
+Seleenix/Docs/_build/doctrees/environment.pickle
+Seleenix/Docs/_build/doctrees/GUI.doctree
+Seleenix/Docs/_build/doctrees/index.doctree
+Seleenix/Docs/_build/doctrees/modules.doctree
+Seleenix/Docs/_build/doctrees/server.doctree
+Seleenix/Docs/_build/doctrees/docs/conf.doctree
+Seleenix/Docs/_build/doctrees/docs/modules.doctree
+Seleenix/Docs/_build/html/.buildinfo
+Seleenix/Docs/_build/html/client.html
+Seleenix/Docs/_build/html/genindex.html
+Seleenix/Docs/_build/html/GUI.html
+Seleenix/Docs/_build/html/index.html
+Seleenix/Docs/_build/html/modules.html
+Seleenix/Docs/_build/html/objects.inv
+Seleenix/Docs/_build/html/py-modindex.html
+Seleenix/Docs/_build/html/search.html
+Seleenix/Docs/_build/html/searchindex.js
+Seleenix/Docs/_build/html/server.html
+Seleenix/Docs/_build/html/_modules/client.html
+Seleenix/Docs/_build/html/_modules/index.html
+Seleenix/Docs/_build/html/_modules/server.html
+Seleenix/Docs/_build/html/_modules/GUI/gui.html
+Seleenix/Docs/_build/html/_sources/client.rst.txt
+Seleenix/Docs/_build/html/_sources/GUI.rst.txt
+Seleenix/Docs/_build/html/_sources/index.rst.txt
+Seleenix/Docs/_build/html/_sources/modules.rst.txt
+Seleenix/Docs/_build/html/_sources/server.rst.txt
+Seleenix/Docs/_build/html/_sources/docs/conf.rst.txt
+Seleenix/Docs/_build/html/_sources/docs/modules.rst.txt
+Seleenix/Docs/_build/html/_static/_sphinx_javascript_frameworks_compat.js
+Seleenix/Docs/_build/html/_static/base-stemmer.js
+Seleenix/Docs/_build/html/_static/basic.css
+Seleenix/Docs/_build/html/_static/doctools.js
+Seleenix/Docs/_build/html/_static/documentation_options.js
+Seleenix/Docs/_build/html/_static/file.png
+Seleenix/Docs/_build/html/_static/french-stemmer.js
+Seleenix/Docs/_build/html/_static/jquery.js
+Seleenix/Docs/_build/html/_static/language_data.js
+Seleenix/Docs/_build/html/_static/minus.png
+Seleenix/Docs/_build/html/_static/plus.png
+Seleenix/Docs/_build/html/_static/pygments.css
+Seleenix/Docs/_build/html/_static/searchtools.js
+Seleenix/Docs/_build/html/_static/sphinx_highlight.js
+Seleenix/Docs/_build/html/_static/translations.js
+Seleenix/Docs/_build/html/_static/css/badge_only.css
+Seleenix/Docs/_build/html/_static/css/theme.css
+Seleenix/Docs/_build/html/_static/css/fonts/fontawesome-webfont.eot
+Seleenix/Docs/_build/html/_static/css/fonts/fontawesome-webfont.svg
+Seleenix/Docs/_build/html/_static/css/fonts/fontawesome-webfont.ttf
+Seleenix/Docs/_build/html/_static/css/fonts/fontawesome-webfont.woff
+Seleenix/Docs/_build/html/_static/css/fonts/fontawesome-webfont.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/lato-bold-italic.woff
+Seleenix/Docs/_build/html/_static/css/fonts/lato-bold-italic.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/lato-bold.woff
+Seleenix/Docs/_build/html/_static/css/fonts/lato-bold.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/lato-normal-italic.woff
+Seleenix/Docs/_build/html/_static/css/fonts/lato-normal-italic.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/lato-normal.woff
+Seleenix/Docs/_build/html/_static/css/fonts/lato-normal.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/Roboto-Slab-Bold.woff
+Seleenix/Docs/_build/html/_static/css/fonts/Roboto-Slab-Bold.woff2
+Seleenix/Docs/_build/html/_static/css/fonts/Roboto-Slab-Regular.woff
+Seleenix/Docs/_build/html/_static/css/fonts/Roboto-Slab-Regular.woff2
+Seleenix/Docs/_build/html/_static/js/badge_only.js
+Seleenix/Docs/_build/html/_static/js/html5shiv-printshiv.min.js
+Seleenix/Docs/_build/html/_static/js/html5shiv.min.js
+Seleenix/Docs/_build/html/_static/js/theme.js
+Seleenix/Docs/_build/html/docs/conf.html
+Seleenix/Docs/_build/html/docs/modules.html
+Seleenix/Docs/_build/singlehtml/.buildinfo
+Seleenix/Docs/_build/singlehtml/index.html
+Seleenix/Docs/_build/singlehtml/objects.inv
+Seleenix/Docs/_build/singlehtml/_static/_sphinx_javascript_frameworks_compat.js
+Seleenix/Docs/_build/singlehtml/_static/base-stemmer.js
+Seleenix/Docs/_build/singlehtml/_static/basic.css
+Seleenix/Docs/_build/singlehtml/_static/doctools.js
+Seleenix/Docs/_build/singlehtml/_static/documentation_options.js
+Seleenix/Docs/_build/singlehtml/_static/file.png
+Seleenix/Docs/_build/singlehtml/_static/french-stemmer.js
+Seleenix/Docs/_build/singlehtml/_static/jquery.js
+Seleenix/Docs/_build/singlehtml/_static/language_data.js
+Seleenix/Docs/_build/singlehtml/_static/minus.png
+Seleenix/Docs/_build/singlehtml/_static/plus.png
+Seleenix/Docs/_build/singlehtml/_static/pygments.css
+Seleenix/Docs/_build/singlehtml/_static/searchtools.js
+Seleenix/Docs/_build/singlehtml/_static/sphinx_highlight.js
+Seleenix/Docs/_build/singlehtml/_static/translations.js
+Seleenix/Docs/_build/singlehtml/_static/css/badge_only.css
+Seleenix/Docs/_build/singlehtml/_static/css/theme.css
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.eot
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.svg
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.ttf
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/fontawesome-webfont.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-bold-italic.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-bold-italic.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-bold.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-bold.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-normal-italic.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-normal-italic.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-normal.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/lato-normal.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Bold.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Bold.woff2
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Regular.woff
+Seleenix/Docs/_build/singlehtml/_static/css/fonts/Roboto-Slab-Regular.woff2
+Seleenix/Docs/_build/singlehtml/_static/js/badge_only.js
+Seleenix/Docs/_build/singlehtml/_static/js/html5shiv-printshiv.min.js
+Seleenix/Docs/_build/singlehtml/_static/js/html5shiv.min.js
+Seleenix/Docs/_build/singlehtml/_static/js/theme.js
+Seleenix/GUI/__init__.py
+Seleenix/GUI/gui.py
+Seleenix/GUI/__pycache__/__init__.cpython-311.pyc
+Seleenix/GUI/__pycache__/gui.cpython-311.pyc
+Seleenix/__pycache__/client.cpython-311.pyc
+Seleenix/__pycache__/server.cpython-311.pyc
