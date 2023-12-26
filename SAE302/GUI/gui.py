@@ -1,3 +1,17 @@
+"""
+Cet extrait de code est la version graphique du client qui se connecte à un serveur à l'aide d'une connexion socket.
+
+Exemple d'utilisation :
+python gui.py --host 127.0.0.1 --port 1234
+
+Entrées :
+- host : l'adresse IP du serveur
+- port : le port du serveur
+- search : activer la recherche de serveur
+
+Sorties:
+- GUI : une interface graphique pour le chat
+"""
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from PyQt6.QtWidgets import *
@@ -10,7 +24,7 @@ from colorama import init, Fore, Back, Style
 
 global connected
 global room
-init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
+init(autoreset=True) # Pour réinitialiser les couleurs à chaque nouvel affichage 
 connected = False
 key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
 iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
@@ -25,8 +39,7 @@ logout_signal = "".join([chr(random.randint(65, 90)) for i in range(32)])
 # variable global nommée error_signal composée de 33 caractères aléatoires
 global error_signal
 error_signal = "".join([chr(random.randint(65, 90)) for i in range(33)])
-#host = "127.0.0.1"
-#port = 1234
+
 
 class ChallengeRefused(Exception): # erreur customisée en lien avec le challenge
     def __init__(self, message):
@@ -45,6 +58,16 @@ class BannedFromServer(Exception):
         super().__init__(message)
         
 def arg_parse():
+    """
+    Fonction permettant de récupérer les arguments de la ligne de commande.
+    Mais aussi d'ajouter des explicatifs sur les arguments.
+    
+    Args:
+        None
+        
+    Returns:
+        args (obj): Les arguments de la ligne de commande.
+    """
     parser = argparse.ArgumentParser(description='Client GUI pour le chat')
     parser.add_argument('--host', type=str,
                     help='L\'ip du serveur hôte', default="127.0.0.1")
@@ -55,28 +78,108 @@ def arg_parse():
     return parser.parse_args()
 
 def encrypt(payload): # pour automatiser encryption
+    """
+    Encrypter un payload donné en utilisant l'algorithme de chiffrement AES.
+    
+    Args:
+        payload (bytes): Le payload à chiffrer.
+
+    Returns:
+        bytes: Le payload chiffré.
+    """ 
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return cipher.encrypt(pad(payload, AES.block_size))
 
 def decrypt(payload): # pour automatiser decryption
+    """
+    Decrypter un payload donné en utilisant l'algorithme de chiffrement AES.
+    
+    Args:
+        payload (bytes): Le payload à déchiffrer.
+    
+    Returns:
+        str: Le payload déchiffré.
+    
+    """
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return unpad(cipher.decrypt(payload), AES.block_size).decode()
 
 
 class ReceiveThread(QThread):
+    """
+    Classe permettant de recevoir les messages du serveur.
+    Elle fonctionne via les envois de signaux.
+    
+    Args:
+        QThread (obj): La classe parente.
+    
+    Attributes:
+        messageReceived (obj): Un signal pour recevoir les messages.
+        showMessageSignal (obj): Un signal pour afficher les messages.
+        showErrorMessageSignal (obj): Un signal pour afficher les messages d'erreur.
+        stopThread (bool): Un booléen pour arrêter le thread.
+        
+    Methods:
+        stop (func): Arrêter le thread.
+        run (func): Lancer le thread.
+    
+    """
     messageReceived = pyqtSignal(str)
     showMessageSignal = pyqtSignal(str, str)
     showErrorMessageSignal = pyqtSignal(str, str)
     
     def __init__(self, parent=None):
+        """
+        Constructeur de la classe ReceiveThread.
+        
+        Classe permettant de recevoir les messages du serveur.
+        Elle fonctionne via les envois de signaux.
+    
+        Args:
+            QThread (obj): La classe parente.
+        
+        Attributes:
+            messageReceived (obj): Un signal pour recevoir les messages.
+            showMessageSignal (obj): Un signal pour afficher les messages.
+            showErrorMessageSignal (obj): Un signal pour afficher les messages d'erreur.
+            stopThread (bool): Un booléen pour arrêter le thread.
+            
+        Methods:
+            stop (func): Arrêter le thread.
+            run (func): Lancer le thread.
+        """
         super().__init__(parent)
         self.stopThread = False
     
     def stop(self):
+        """
+        Fonction permettant d'arrêter le thread.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        """
         self.stopThread = True
 
         
     def run(self):
+        """
+        Fonction permettant de lancer le thread.
+        
+        Args:
+            None
+            
+        Returns:
+            None (envoie des signaux)
+            
+        Raises:
+            None
+        """
         while not self.stopThread:
             try:
                 reply = client_socket.recv(1024).decode()
@@ -107,15 +210,66 @@ class ReceiveThread(QThread):
                 pass
 # application graphique PyQt6 page de connexion
 class Login(QWidget):
+    """
+    Classe correspondant à la fenêtre de connexion.
+    
+    Args:
+        QWidget (obj): La classe parente.
+        
+    Attributes:
+        username (str): Le nom d'utilisateur.
+        password (str): Le mot de passe.
+        show_password (obj): Un bouton pour afficher le mot de passe.
+        login_button (obj): Un bouton pour se connecter.
+        register_button (obj): Un bouton pour s'inscrire. [non utilisé]
+        layout (obj): Le layout de la fenêtre.
+        ui (obj): L'instance de la classe ChatApp.
+        connected (bool): Un booléen pour savoir si l'utilisateur est connecté.
+        current_room (str): La room actuelle.
+        allowed_room (str): Les rooms autorisées.
+    
+    Methods:
+        open_chat (func): Ouvrir la fenêtre de chat.
+        updateNewWindowUi (func): Mettre à jour l'interface de la fenêtre de chat.
+        login (func): Se connecter.
+        register (func): S'inscrire. [non utilisé]
+    
+    """
     connected = False
     
     
     def open_chat(self):
+        """
+        Fonction permettant d'ouvrir la fenêtre de chat.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        
+        """
         self.ui = ChatApp()
         connectSignals(self.ui)
         
         
     def updateNewWindowUi(self):
+        """
+        Fonction permettant de mettre à jour l'interface de la fenêtre de chat.
+        
+        Args:
+            None
+        
+        Returns:
+            None
+            
+        Raises:
+            None
+        
+        """
         global connected
         connected = self.ui.IsConnected = self.connected
         room = self.ui.room = self.current_room
@@ -151,6 +305,33 @@ class Login(QWidget):
             self.ui.market_room.setStyleSheet("background-color: red;")
         
     def __init__(self):
+        """
+        Constructeur de la classe Login.
+        
+        Classe correspondant à la fenêtre de connexion.
+    
+        Args:
+            QWidget (obj): La classe parente.
+            
+        Attributes:
+            username (str): Le nom d'utilisateur.
+            password (str): Le mot de passe.
+            show_password (obj): Un bouton pour afficher le mot de passe.
+            login_button (obj): Un bouton pour se connecter.
+            register_button (obj): Un bouton pour s'inscrire. [non utilisé]
+            layout (obj): Le layout de la fenêtre.
+            ui (obj): L'instance de la classe ChatApp.
+            connected (bool): Un booléen pour savoir si l'utilisateur est connecté.
+            current_room (str): La room actuelle.
+            allowed_room (str): Les rooms autorisées.
+        
+        Methods:
+            open_chat (func): Ouvrir la fenêtre de chat.
+            updateNewWindowUi (func): Mettre à jour l'interface de la fenêtre de chat.
+            login (func): Se connecter.
+            register (func): S'inscrire. [non utilisé]
+        
+        """
         super().__init__()
         #client_socket_create()
         self.setWindowTitle("Login")
@@ -178,6 +359,21 @@ class Login(QWidget):
         #self.register_button.clicked.connect(self.register)
         self.show()
     def login(self):
+        """
+        Fonction permettant de se connecter.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            BannedFromServer: Si l'utilisateur est banni du serveur.
+            ChallengeRefused: Si le challenge est refusé.
+            ConnectionRefusedError: Si la connexion est refusée.
+        
+        """
         client_socket_create()
         username = self.username.text() or "default"
         password = self.password.text()
@@ -231,13 +427,208 @@ class Login(QWidget):
         
         return self.close()
 
+class AdminPanel(QWidget):
+    """
+    Panneau constamment ouvert et affiché à l'écran pour les administrateurs.
+    Ceux-ci peuvent accepter ou refuser les demandes d'accès à une room.
+    Et aussi récupérer les requêtes actuelles avec le bouton "Refresh".
+    
+    (Il est important de noter que les utilisateurs basiques n'auront aucune réponse)
+    
+    Args:
+        QWidget (obj): La classe parente.
+        
+    Attributes:
+        dropdown_list (obj): La liste déroulante.
+    
+    Methods:
+        accept_action (func): Accepter une requête.
+        refuse_action (func): Refuser une requête.
+        refresh_action (func): Rafraîchir les requêtes.
+        updateUI (func): Mettre à jour l'interface.
+        
+    """
+    def __init__(self):
+        """
+        Constructeur de la classe AdminPanel.
+        
+        Panneau constamment ouvert et affiché à l'écran pour les administrateurs.
+        Ceux-ci peuvent accepter ou refuser les demandes d'accès à une room.
+        Et aussi récupérer les requêtes actuelles avec le bouton "Refresh".
+        
+        (Il est important de noter que les utilisateurs basiques n'auront aucune réponse)
+        
+        Args:
+            QWidget (obj): La classe parente.
+            
+        Attributes:
+            dropdown_list (obj): La liste déroulante.
+        
+        Methods:
+            accept_action (func): Accepter une requête.
+            refuse_action (func): Refuser une requête.
+            refresh_action (func): Rafraîchir les requêtes.
+            updateUI (func): Mettre à jour l'interface.
+        """
+        super().__init__()
 
+        
+        admin_layout = QVBoxLayout()
+
+        
+        admin_layout.addWidget(QLabel("Admin Panel"))
+
+        
+        self.dropdown_list = QComboBox()
+        
+        self.setFixedSize(457, 167)
+        
+        admin_layout.addWidget(self.dropdown_list)
+
+        
+        accept_button = QPushButton("Accept")
+        refuse_button = QPushButton("Refuse")
+        refresh_button = QPushButton("Refresh")
+        accept_button.clicked.connect(self.accept_action)
+        refuse_button.clicked.connect(self.refuse_action)
+        refresh_button.clicked.connect(self.refresh_action)
+
+        
+        admin_layout.addWidget(accept_button)
+        admin_layout.addWidget(refuse_button)
+        admin_layout.addWidget(refresh_button)
+
+        self.setLayout(admin_layout)
+
+    def accept_action(self):
+        """
+        Fonction permettant d'accepter une requête.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        """
+        selected_option = self.dropdown_list.currentText()
+        print(f"Accepted: {selected_option}")
+        
+        client_socket.send(f"/accept:{login.username}:{selected_option.split(' ')[1]}".encode()) if selected_option else None
+        #client_socket.send(f"/accept:{selected_option.split(' ')[1]}".encode()) if selected_option else None
+        #enlever la requête de la liste déroulante
+        self.dropdown_list.removeItem(self.dropdown_list.currentIndex()) if selected_option else None
+
+    def refuse_action(self):
+        """
+        Fonction permettant de refuser une requête.
+        
+        Args:
+            None
+        
+        Returns:
+            None
+            
+        Raises:
+            None
+            
+        """
+        selected_option = self.dropdown_list.currentText()
+        print(f"Refused: {selected_option}")
+        
+        client_socket.send(f"/refuse:{login.username}:{selected_option.split(' ')[1]}".encode()) if selected_option else None
+        #client_socket.send(f"/refuse:{selected_option.split(' ')[1]}".encode()) if selected_option else None
+        #enlever la requête de la liste déroulante
+        self.dropdown_list.removeItem(self.dropdown_list.currentIndex()) if selected_option else None
+        
+        
+    def refresh_action(self):
+        """
+        Fonction permettant de rafraîchir les requêtes.
+        En réalité, elle permet surtout de les récupérer.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        
+        """
+        client_socket.send(f"/query:{login.username}".encode())
+        
+        
+        
+    # mettre à jour l'ui suite à un ajout externe d'éléments dans la liste déroulante
+    def updateUI(self, payload):
+        """
+        Fonction permettant de mettre à jour l'interface.
+        Et d'ajouter dans la liste déroulante les requêtes.
+        
+        Args:
+            payload (str): Le payload à traiter.
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        
+        
+        """
+        query = payload.split("query:")[1].replace("\'", "").split("!")    
+        for q in query:
+            q = q.replace("[", "").replace("]", "").split(",") # pour changer le string avec les "[]" en vrai liste
+            
+            try:
+                if int(q[-1]) == 0:
+                    # ajouter à la liste déroulante si élément pas déjà présent
+                    self.dropdown_list.addItem(f"ID: {q[0]} -> {q[1]} {q[2]} {q[3]}") \
+                        if not f"ID: {q[0]} -> {q[1]} {q[2]} {q[3]}" in [self.dropdown_list.itemText(i) \
+                            for i in range(self.dropdown_list.count())] else None
+            except ValueError:
+                pass
+            
+        return 0
+        
 # application graphique PyQt6 page de tchat
 # menu latéral gauche avec 5 boutons
 # Text box contenant le message à envoyer
 # bouton envoyer
 
 class ChatApp(QWidget):
+    """
+    Classe réprésentant la fenêtre graphique du chat.
+    
+    Args:
+        QWidget (obj): La classe parente.
+        
+    Attributes:
+        connected (bool): Un booléen pour savoir si l'utilisateur est connecté.
+        allowed_room (str): Les rooms autorisées.
+        room (str): La room actuelle.
+        username (str): Le nom d'utilisateur.
+        last_message (str): Le dernier message envoyé.
+        showMessageSignal (str, str): Un signal pour afficher les messages.
+        showErrorMessageSignal (str, str): Un signal pour afficher les messages d'erreur.
+        stopThreadSignal (obj): Un signal pour arrêter le thread.
+        
+    Methods:
+        EditConnected (func): Modifier la variable globale connected.
+        IsConnected (func): Récupérer la variable globale connected.
+        join (func): Rejoindre une room.
+        close (func): Fermer la fenêtre.
+        closeEvent (func): Fermer la fenêtre.
+        sendMessage (func): Envoyer un message.
+        restore_old_messages (func): Restaurer les anciens messages d'un salon.
+        handleReceivedMessage (func): Traiter les messages reçus.
+        showInfoMessage (func): Afficher un message.
+        showCriticalMessage (func): Afficher un message d'erreur.
+    """
     connected = False
     allowed_room = None
     room = None
@@ -249,97 +640,190 @@ class ChatApp(QWidget):
     showErrorMessageSignal = pyqtSignal(str, str)
     stopThreadSignal = pyqtSignal()
     def __init__(self):
-            super().__init__()
-            self.setWindowTitle('Chat App')
+        """
+        Constructeur de la classe ChatApp.
+        
+        
+        Classe réprésentant la fenêtre graphique du chat.
+    
+        Args:
+            QWidget (obj): La classe parente.
+            
+        Attributes:
+            connected (bool): Un booléen pour savoir si l'utilisateur est connecté.
+            allowed_room (str): Les rooms autorisées.
+            room (str): La room actuelle.
+            username (str): Le nom d'utilisateur.
+            last_message (str): Le dernier message envoyé.
+            showMessageSignal (str): Un signal pour afficher les messages.
+            showErrorMessageSignal (str): Un signal pour afficher les messages d'erreur.
+            stopThreadSignal (obj): Un signal pour arrêter le thread.
+            
+        Methods:    
+            EditConnected (func): Modifier la variable globale connected.
+            IsConnected (func): Récupérer la variable globale connected.
+            join (func): Rejoindre une room.
+            close (func): Fermer la fenêtre.
+            closeEvent (func): Fermer la fenêtre.
+            sendMessage (func): Envoyer un message.
+            restore_old_messages (func): Restaurer les anciens messages d'un salon.
+            handleReceivedMessage (func): Traiter les messages reçus.
+            showInfoMessage (func): Afficher un message.
+            showCriticalMessage (func): Afficher un message d'erreur.
+        """
+        super().__init__()
+        self.setWindowTitle('Chat App')
 
-            # Créer des widgets
-            self.message_list = QListWidget()
-            self.message_input = QLineEdit()
-            self.send_button = QPushButton('Envoyer')
-            self.quit_button = QPushButton('Quitter')
-            self.general_room = QPushButton("General" )
-            self.blabla_room = QPushButton("Blabla")
-            self.compta_room = QPushButton("Comptabilité")
-            self.info_room = QPushButton("Informatique")
-            self.market_room = QPushButton("Marketing")
-            
+        # Créer des widgets
+        self.message_list = QListWidget()
+        self.message_input = QLineEdit()
+        self.send_button = QPushButton('Envoyer')
+        self.quit_button = QPushButton('Quitter')
+        self.general_room = QPushButton("General" )
+        self.blabla_room = QPushButton("Blabla")
+        self.compta_room = QPushButton("Comptabilité")
+        self.info_room = QPushButton("Informatique")
+        self.market_room = QPushButton("Marketing")
+       
+        self.admin_panel = AdminPanel()
+        self.admin_panel.show()
+        
+        
 
-            # Mettre en place la mise en page
-            upper_layout = QHBoxLayout()
-            layout = QVBoxLayout()
-            h_layout = QHBoxLayout()
-            side_menu_layout = QVBoxLayout()
+        # Mettre en place la mise en page
+        upper_layout = QHBoxLayout()
+        layout = QVBoxLayout()
+        h_layout = QHBoxLayout()
+        side_menu_layout = QVBoxLayout()
 
-            
-            #menu latéral gauche avec 5 boutons
-            side_menu_layout.addWidget(self.general_room)
-            side_menu_layout.addWidget(self.blabla_room)
-            side_menu_layout.addWidget(self.compta_room)
-            side_menu_layout.addWidget(self.info_room)
-            side_menu_layout.addWidget(self.market_room)
-            
-            
-            # menu latéral + message list 
-            upper_layout.addLayout(side_menu_layout)
-            upper_layout.addWidget(self.message_list)
+        
+        #menu latéral gauche avec 5 boutons
+        side_menu_layout.addWidget(self.general_room)
+        side_menu_layout.addWidget(self.blabla_room)
+        side_menu_layout.addWidget(self.compta_room)
+        side_menu_layout.addWidget(self.info_room)
+        side_menu_layout.addWidget(self.market_room)
+        
+        
+        # menu latéral + message list 
+        upper_layout.addLayout(side_menu_layout)
+        upper_layout.addWidget(self.message_list)
 
-            layout.addLayout(upper_layout)
+        layout.addLayout(upper_layout)
 
-            h_layout.addWidget(self.message_input)
-            h_layout.addWidget(self.send_button)
-            h_layout.addWidget(self.quit_button)
+        h_layout.addWidget(self.message_input)
+        h_layout.addWidget(self.send_button)
+        h_layout.addWidget(self.quit_button)
 
-            #h_layout.addLayout(side_menu_layout)
-            layout.addLayout(h_layout)
-            
+        #h_layout.addLayout(side_menu_layout)
+        layout.addLayout(h_layout)
+        
 
-            self.setLayout(layout)
+        self.setLayout(layout)
 
-            # Connecter le signal du bouton "Envoyer" à la fonction correspondante
-            self.send_button.clicked.connect(self.sendMessage)
-            
-            # Connecter le signal du bouton "Quitter" à la fonction correspondante
-            self.quit_button.clicked.connect(self.close)
-            
-            self.blabla_room.clicked.connect(lambda: self.join(self.blabla_room))
-            self.general_room.clicked.connect(lambda: self.join(self.general_room))
-            self.compta_room.clicked.connect(lambda: self.join(self.compta_room))
-            self.info_room.clicked.connect(lambda: self.join(self.info_room))
-            self.market_room.clicked.connect(lambda: self.join(self.market_room))
-            
-            #self.recvthread = threading.Thread(target=self.receiveMessage)
-            #self.recvthread = ReceiveThread(self)
-            #connectSignals(self)
-            
-            self.recvthread = ReceiveThread(self)
-            self.recvthread.messageReceived.connect(self.handleReceivedMessage)
-            connectSignals(self)
-            
+        # Connecter le signal du bouton "Envoyer" à la fonction correspondante
+        self.send_button.clicked.connect(self.sendMessage)
+        
+        # Connecter le signal du bouton "Quitter" à la fonction correspondante
+        self.quit_button.clicked.connect(self.close)
+        
+        self.blabla_room.clicked.connect(lambda: self.join(self.blabla_room))
+        self.general_room.clicked.connect(lambda: self.join(self.general_room))
+        self.compta_room.clicked.connect(lambda: self.join(self.compta_room))
+        self.info_room.clicked.connect(lambda: self.join(self.info_room))
+        self.market_room.clicked.connect(lambda: self.join(self.market_room))
+        
+        self.recvthread = ReceiveThread(self)
+        self.recvthread.messageReceived.connect(self.handleReceivedMessage)
+        connectSignals(self)
+        
+        self.setGeometry(100, 100, 600, 400)
 
-            
-            
-
-            # Définir la géométrie de la fenêtre principale
-            #self.setGeometry(100, 100, 600, 400)
-            self.setGeometry(100, 100, 600, 400)
-
-            self.show()
-            
+        self.show()
+        
     def showInfoMessage(self, title, message):
+        """
+        Fonction permettant  l'émission d'un signal pour afficher un message.
+        
+        Args:
+            title (str): Le titre du message.
+            message (str): Le message.
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        
+        """
         self.showMessageSignal.emit(title, message)
 
     def showCriticalMessage(self, title, message):
-        self.showErrorMessageSignal.emit(title, message)
+        """
+        Fonction permettant l'émission d'un signal pour afficher un message d'erreur.
+        
+        Args:
+            title (str): Le titre du message.
+            message (str): Le message.
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        """
+        
+        self.showErrorMessageSignal.emit(title, message)  
+        
         
     # afin d'impacter toutes les instances de ChatApp en set
     def EditConnected(self, new_value):
+        """
+        Fonction permettant de modifier la variable globale connected.
+        
+        Args:
+            new_value (bool): La nouvelle valeur de la variable globale.
+            
+        Returns:
+            None
+        
+        Raises:
+            None
+        
+        """
         ChatApp.connected = new_value
     # afin d'impacter toutes les instances de ChatApp en get
     def IsConnected(self):
+        """
+        Fonction permettant de récupérer la variable globale connected.
+        
+        Args:
+            None
+            
+        Returns:
+            bool: La valeur de la variable globale.
+            
+        Raises:
+            None
+        """
         return ChatApp.connected 
         
             
     def join(self, button_room):
+        """
+        Fonction permettant de rejoindre une room.
+        Dans le cas où l'utilisateur ne peut pas rejoindre la room, 
+        une demande de souscription est envoyée au serveur.
+        
+        Args:
+            button_room (obj): Le bouton de la room.
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        """
         if button_room.styleSheet() == "background-color: lightgreen;":
             room = button_room.text()
             client_socket.send(f"/join {room}".encode())
@@ -349,22 +833,58 @@ class ChatApp(QWidget):
         client_socket.send("/rooms".encode()) # pour rafraîchir           
         
     def close(self):
+        """
+        Fonction permettant de fermer la fenêtre.
+        
+        Args:
+            None
+            
+        Returns:
+            super().close(): La fonction close de la classe parente.
+            
+        Raises:
+            None
+        """
         self.EditConnected = False
-        #global connected
-        #connected = False
-        #self.connected = False
         #ouvrir une nouvelle instance de Login
         login = Login()
         login.setWindowTitle("Login")
         login.show()
+        self.admin_panel.close()
         return super().close()
     
     def closeEvent(self, event):
+        """
+        Fonction d'événement accompagnant la fermeture de la fenêtre.
+        
+        Args:
+            event (obj): L'événement.
+            
+        Returns:
+            None
+            
+        Raises:
+            None
+        """
         self.recvthread.stop()
         client_socket.close()
         event.accept()
         
     def sendMessage(self):
+        """
+        Fonction permettant d'envoyer un message.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            ConnectionAbortedError: Si la connexion est interrompue par le serveur./ 
+                                    Vous avez bien été déconnecté du serveur.
+        
+        """
 
         if self.IsConnected:
             # Récupérer le texte de la boîte de texte
@@ -393,6 +913,20 @@ class ChatApp(QWidget):
         return 0
     
     def restore_old_messages(self, payload):
+        """
+        Permet de restaurer les anciens messages du salon actuel.
+        
+        Args:
+            payload (str): Les anciens messages du salon.
+
+        Returns:
+            None
+            
+        Raises:
+            None (contrôlé par serveur)
+        
+        
+        """
         all_messages = payload.split("old:")[1].split(",")
         
         # restaure les messages du salon actuel
@@ -406,7 +940,32 @@ class ChatApp(QWidget):
     
     
     def handleReceivedMessage(self, message):
-        print(error_signal, logout_signal)
+        """
+        Fonction permettant de traiter les messages reçus.
+        
+        - cmd: Si le serveur renvoie une commande.
+        - scb: Si le serveur renvoie une réponse du /subscribe.
+        - users: Si le serveur renvoie la liste des utilisateurs. 
+                /!\ (non gérée dans GUI)
+        - query: Si le serveur renvoie la liste des requêtes pour admin.
+        - jn: Si le serveur renvoie la réponse du /join.
+        - us: Si le serveur renvoie la réponse du /unsubscribe.
+        - fwd: Si le serveur renvoie la réponse du /forward.
+        - old: Si le serveur renvoie les anciens messages.
+                
+        Args:
+            message (str): Le message reçu.
+            
+        Returns:
+            None
+            
+        Raises:
+            Depuis les signaux:
+                - Error: Si le serveur renvoie une erreur.
+                - Déconnexion: Si le serveur renvoie une déconnexion.
+                
+        
+        """
         
         if message.startswith(error_signal):
             QMessageBox.critical(self, "Error", message[len(f"{error_signal}:"):])
@@ -436,41 +995,23 @@ class ChatApp(QWidget):
                         .format(color="lightgreen" if room.startswith("alw:") else "red"))
                 else:
                     pass
-            """
-            if "alw:" in message:
-                for a in message.split(","):
-                    if "alw:" in a:
-                        room = a.split("alw:")[1]
-                    if room == "General":
-                        self.general_room.setStyleSheet("background-color: lightgreen;")
-                    elif room == "Blabla":
-                        self.blabla_room.setStyleSheet("background-color: lightgreen;")
-                    elif room == "Comptabilité":
-                        self.compta_room.setStyleSheet("background-color: lightgreen;")
-                    elif room == "Informatique":
-                        self.info_room.setStyleSheet("background-color: lightgreen;")
-                    elif room == "Marketing":
-                        self.market_room.setStyleSheet("background-color: lightgreen;")
-                    else:
-                        pass
-            """
             message = None
         
         elif message.startswith("scb:"): # le serveur renvoie la réponse du /subscribe
             message = message.split("scb:")[1]
             
             if "accept" in message:
-                #QMessageBox.information(self, "Info", "Vous pouvez accéder à la room")
-                #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous pouvez accéder à la room"))
                 client_socket.send("/rooms".encode())
             else:
                 client_socket.send("/rooms".encode())
-                #QMessageBox.critical(self, "Error", "Vous ne pouvez pas accéder à la room")
-                #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous ne pouvez pas accéder à la room"))
             message = None
             
         elif message.startswith("users:"): # le serveur renvoie la liste des utilisateurs
-            pass # à faire plus tard
+            pass # Non géré (voir le client non graphique pour implémenter la logique)
+        
+        elif message.startswith("query:"): # le serveur renvoie la liste des requêtes pour admin
+            self.admin_panel.updateUI(message) # pour mettre à jour son UI 
+            message = None
         
         elif message.startswith("jn:"): # le serveur renvoie la réponse du /join
             message = message.split("jn:")[1]
@@ -478,8 +1019,6 @@ class ChatApp(QWidget):
                 self.room = message.split(":")[1]
                 self.message_list.clear()
                 self.message_list.addItem(f"Vous avez rejoint la room {self.room}")
-                #QMessageBox.information(self, "Info", "Vous avez bien rejoint la room")
-                #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous avez bien rejoint la room"))
             else:
                 room = message.split(",")[0].split(" ")[-1]          
                 if room == "General":
@@ -499,21 +1038,14 @@ class ChatApp(QWidget):
                 self.message_list.clear()
                 self.message_list.addItem(f"Vous avez rejoint la room {self.room}")
                 
-                #QMessageBox.critical(self, "Error", "Vous n'avez pas pu rejoindre la room")
-                #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu rejoindre la room"))
             message = None
             
         elif message.startswith("us:"): # le serveur renvoie la réponse du /unsubscribe
             message = message.split("us:")[1]
             if "désabonné" in message:
-                #client_socket.send("/rooms".encode())
                 self.join(self.general_room)
-                #QMessageBox.information(self, "Info", "Vous avez bien quitté la room")
-                #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous avez bien quitté la room"))
             else:
                 pass
-                #QMessageBox.critical(self, "Error", "Vous n'avez pas pu quitter la room")
-                #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu quitter la room"))
             message = None
             
         elif message.startswith("fwd:"): # le serveur renvoie la réponse du /forward
@@ -525,171 +1057,44 @@ class ChatApp(QWidget):
             self.restore_old_messages(message)
             message = None
         
-        """
-        if message == "bye" or message == "arret":
-            self.EditConnected = False
-            client_socket.close()
-            raise ConnectionClosedByServer("Closed connection")
-        """
         if message:
             self.message_list.addItem(f"server:{message}")
             message = None
             
         return 0
-        
-        
-        
-        
-        
-        
-        
-    """
-    def receiveMessage(self):
-        while self.IsConnected: # récupère variable globale
-            
-            if self.stopThreadSignal.emit():
-                break
-            try:
-                reply = client_socket.recv(1024).decode()
                 
-                
-                if "cmd:" in reply:
-                    reply = reply.split("cmd:")[1]
-                    if "alw:" in reply:
-                        for a in reply.split(","):
-                            if "alw:" in a:
-                                room = a.split("alw:")[1]
-                            if room == "General":
-                                self.general_room.setStyleSheet("background-color: lightgreen;")
-                            elif room == "Blabla":
-                                self.blabla_room.setStyleSheet("background-color: lightgreen;")
-                            elif room == "Comptabilité":
-                                self.compta_room.setStyleSheet("background-color: lightgreen;")
-                            elif room == "Informatique":
-                                self.info_room.setStyleSheet("background-color: lightgreen;")
-                            elif room == "Marketing":
-                                self.market_room.setStyleSheet("background-color: lightgreen;")
-                            else:
-                                pass
-                    reply = None
-                    
-                elif "scb:" in reply: # le serveur renvoie la réponse du /subscribe
-                    reply = reply.split("scb:")[1]
-                    
-                    if "accept" in reply:
-                        #QMessageBox.information(self, "Info", "Vous pouvez accéder à la room")
-                        #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous pouvez accéder à la room"))
-                        client_socket.send("/rooms".encode())
-                    else:
-                        client_socket.send("/rooms".encode())
-                        #QMessageBox.critical(self, "Error", "Vous ne pouvez pas accéder à la room")
-                        #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous ne pouvez pas accéder à la room"))
-                    reply = None
-                    
-                elif "users:" in reply: # le serveur renvoie la liste des utilisateurs
-                    pass # à faire plus tard
-                
-                elif "jn:" in reply: # le serveur renvoie la réponse du /join
-                    reply = reply.split("jn:")[1]
-                    if "Succès" in reply:
-                        self.room = reply.split(":")[1]
-                        self.message_list.clear()
-                        self.message_list.addItem(f"Vous avez rejoint la room {self.room}")
-                        #QMessageBox.information(self, "Info", "Vous avez bien rejoint la room")
-                        #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous avez bien rejoint la room"))
-                    else:
-                        room = reply.split(",")[0].split(" ")[-1]          
-                        if room == "General":
-                            self.general_room.setStyleSheet("background-color: red;")
-                        elif room == "Blabla":
-                            self.blabla_room.setStyleSheet("background-color: red;")
-                        elif room == "Comptabilité":
-                            self.compta_room.setStyleSheet("background-color: red;")
-                        elif room == "Informatique":
-                            self.info_room.setStyleSheet("background-color: red;")
-                        elif room == "Marketing":
-                            self.market_room.setStyleSheet("background-color: red;")
-                        else:
-                            pass
-                    
-                        self.room = room
-                        self.message_list.clear()
-                        self.message_list.addItem(f"Vous avez rejoint la room {self.room}")
-                        
-                        #QMessageBox.critical(self, "Error", "Vous n'avez pas pu rejoindre la room")
-                        #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu rejoindre la room"))
-                    reply = None
-                    
-                elif "us:" in reply: # le serveur renvoie la réponse du /unsubscribe
-                    reply = reply.split("us:")[1]
-                    if "désabonné" in reply:
-                        self.join(self.general_room)
-                        client_socket.send("/rooms".encode())
-                        #QMessageBox.information(self, "Info", "Vous avez bien quitté la room")
-                        #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Info"), Q_ARG(str, "Vous avez bien quitté la room"))
-                    else:
-                        pass
-                        #QMessageBox.critical(self, "Error", "Vous n'avez pas pu quitter la room")
-                        #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "Vous n'avez pas pu quitter la room"))
-                    reply = None
-                    
-                elif "fwd:" in reply: # le serveur renvoie la réponse du /forward
-                    fwd_user, fwd_reply = reply.split("fwd:")[1].split(":")[0], reply.split("fwd:")[1].split(":")[1]
-                    self.message_list.addItem(f"{fwd_user}: {fwd_reply}")
-                    reply = None
-                    
-                elif "old:" in reply: # le serveur renvoie les anciens messages
-                    self.restore_old_messages(reply)
-                    reply = None
-                
-                if reply == "bye" or reply == "arret":
-                    self.EditConnected = False
-                    client_socket.close()
-                    raise ConnectionClosedByServer("Closed connection")
-                
-                if reply:
-                    self.message_list.addItem(f"server:{reply}")
-                    reply = None
-                
-            except ConnectionClosedByServer as err:
-                print("La connexion a été fermée par le serveur")
-                #QMessageBox.information(self, "Déconnexion", "Vous avez bien été déconnecté du serveur") if not self.last_message == "bye" else None
-                #QMetaObject.invokeMethod(self, "showInfoMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Déconnexion"), Q_ARG(str, "Vous avez bien été déconnecté du serveur")) if not self.last_message == "bye" else None
-                #client_socket.close()
-                #self.connected = False
-                #connected = False
-                self.EditConnected = False
-                
-            except ConnectionResetError as err:
-                print("La connexion a été réinitialisée par le serveur")
-                #QMessageBox.critical(self, "Error", "La connexion a été réinitialisée par le serveur") if not self.last_message == "bye" else None
-                #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "La connexion a été réinitialisée par le serveur")) if not self.last_message == "bye" else None
-                #client_socket.close()
-                #self.connected = False
-                #connected = False
-                self.EditConnected = False
-                
-            except ConnectionAbortedError as err:
-                
-                #QMessageBox.critical(self, "Error", "La connexion a été interrompue par le serveur") if not self.last_message == "bye" else None
-                #QMetaObject.invokeMethod(self, "showCriticalMessage", Qt.ConnectionType.QueuedConnection, Q_ARG(str, "Error"), Q_ARG(str, "La connexion a été interrompue par le serveur")) if not self.last_message == "bye" else None
-                #client_socket.close()
-
-                #self.connected = False
-                #connected = False
-                self.EditConnected = False
-            
-            else:
-                pass
-
-
-        return self.close()
-"""        
     
 def connectSignals(chat_app_instance):
+    """
+    Cette fonction permet de connecter les signaux entre deux classes
+    
+    Args:
+        chat_app_instance (obj): L'instance de la classe ChatApp.
+    
+    Returns:
+        None
+        
+    Raises:
+        None
+    
+    """
     chat_app_instance.showMessageSignal.connect(chat_app_instance.showInfoMessage)
     chat_app_instance.showErrorMessageSignal.connect(chat_app_instance.showCriticalMessage)
 def client_socket_create():
+    """
+    Fonction permettant d'initier de nouveaux sockets afin de se connecter au serveur.
+    Ce socket est accessible depuis tout le programme via la variable globale client_socket.
+    
+    Args:
+        None
+        
+    Returns:
+        None
+    
+    Raises:
+        None
+    
+    """
     global client_socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
@@ -697,6 +1102,19 @@ def client_socket_create():
     return 0
 
 def get_ip():
+    """
+    Fonction utilisant un socket afin d'initier une connexion vers 8.8.8.8
+    et récupérer l'adresse IP de l'interface utilisée.
+    
+    Args:
+        None
+    
+    Returns:
+        str: L'adresse IP de l'interface.
+        
+    Raises:
+        Exception: Si la connexion échoue.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -708,11 +1126,25 @@ def get_ip():
     
     return str(ip)
 
+# Cette fonction a été générée par chatgpt
 def get_interface_name_by_ip(ip_address):
+    """
+    Fonction générée par ChatGPT permettant de récupérer nom 
+    d'une interface active
+    
+    Args:
+        ip_address (str): L'adresse IP de l'interface.
+        
+    Returns:
+        str: Le nom de l'interface.
+        
+    Raises:
+        None
+    """
     try:
         # Utiliser socket pour résoudre le nom d'hôte associé à l'adresse IP
-        hostname, _, _ = socket.gethostbyaddr(ip_address)
-
+        hostname, _, _ = socket.gethostbyaddr(ip_address) # le _ veut dire ne rentrer la valeur dans une variable (utilisé parfois dans les boucles)
+        
         # Utiliser psutil pour obtenir les informations sur les interfaces réseau
         for interface, addrs in psutil.net_if_addrs().items():
             for addr in addrs:
@@ -726,6 +1158,19 @@ def get_interface_name_by_ip(ip_address):
         # Gérer les erreurs en cas de résolution d'adresse IP ou si l'adresse IP n'est pas trouvée dans les interfaces
         return None
 def handle_announcement(pkt):
+    """
+    Fonction permettant de chercher l'annoncement du serveur à travers le réseau
+    sur une interface donnée et de récupérer l'adresse IP et le port du serveur.
+    
+    Args:
+        pkt (packet): Le paquet reçu.
+        
+    Returns:
+        None
+        
+    Raises:
+        None
+    """
     global port, host
     if pkt.haslayer(IP) and pkt.haslayer(UDP):
         load = pkt[Raw].load.decode('utf-8')
@@ -741,10 +1186,24 @@ def handle_announcement(pkt):
             
 
 if __name__ == "__main__":
+    """
+    Point d'entrée du programme client (si exécuté en script)
+    
+    Récupérer les arguments de la ligne de commande et lancer le programme client.
+    
+    Si search est activé:
+        vérifier si le client s'exécute sur une machine virtuelle. Si ce n'est pas le cas, rechercher des serveurs sur le réseau local en utilisant des paquets UDP.
+        Puis s'il y a un serveur trouvé, démarrer main avec l'adresse et le port du serveur.
+    Sinon:
+        démarrer main avec l'adresse et le port du serveur. (fournis en argument ou par défaut)
+    """
     args = arg_parse()
     
     if args.search:
-        vm_check = True if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() else False
+        vm_check = True \
+        if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() \
+            or getResults("WMIC BIOS GET SERIALNUMBER").split("\n")[1] == "0" \
+                else False # Vérifie si le client est dans une VM ou non.
         #vm_check = False
         if not vm_check:
             c_iface = get_interface_name_by_ip(get_ip())
@@ -752,6 +1211,13 @@ if __name__ == "__main__":
             client_ports = 9999
             filters = f"udp port {client_ports}"
             sniff(prn=handle_announcement, filter=filters, store=0, iface=c_iface, timeout=20, count=1)
+            if host == None or port == None:
+                print(Fore.RED + "Impossible de trouver le serveur, vérifiez que le serveur est bien lancé sur le réseau local.")
+                sys.exit()
+            
+            
+            host = args.host if host == None else host
+            port = args.port if port == None else port
         else:
             print(Fore.RED + "Vous ne pouvez pas lancer le client en mode recherche depuis une machine virtuelle." + Fore.YELLOW + "\nIl est important de noter que vous devriez mettre le serveur sur cette VM et les clients sur des machines physiques.(pour que ça puisse fonctionner)")
             sys.exit()

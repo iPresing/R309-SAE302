@@ -1,10 +1,96 @@
-Client - Serveur/utilisateurs.py
-SAE302/backup_server
-SAE302/utilisateurs.py
-SAE302/GUI/*.ui
-SAE302/GUI/*.bak
-SAE302/GUI/*.old
-SAE302/GUI/*.sql
-SAE302/GUI/*example.*
+# Ignorez les fichiers liés au module Client-Serveur/utilisateurs.py
+Client-Serveur/utilisateurs.py
+
+
+# Ignorez les fichiers de sauvegarde et les fichiers liés à l'interface graphique dans le répertoire SAE302
+SAE302/
+  backup_server
+  utilisateurs.py
+  GUI/
+    *.ui
+    *.bak
+    *.old
+    *.sql
+    *example.*
+
+
+# Ignorez fichier gui.py dans le répertoire toto
 toto/gui.py
+
+
+# Ignorez le fichier requirements.txt lié à l'interface graphique
 SAE302/GUI/requirements.txt
+
+
+# Ignorez les artefacts de construction de la documentation Sphinx
+SAE302/Docs/_build/
+  doctrees/
+    *.doctree
+  html/
+    .buildinfo
+    client.html
+    genindex.html
+    GUI.html
+    index.html
+    modules.html
+    objects.inv
+    py-modindex.html
+    search.html
+    searchindex.js
+    server.html
+    _modules/
+      client.html
+      index.html
+      server.html
+      GUI/
+        gui.html
+    _sources/
+      client.rst.txt
+      GUI.rst.txt
+      index.rst.txt
+      modules.rst.txt
+      server.rst.txt
+      docs/
+        conf.rst.txt
+        modules.rst.txt
+    _static/
+      *.js
+      *.css
+      fonts/
+        *.eot
+        *.svg
+        *.ttf
+        *.woff
+        *.woff2
+
+
+# Ignorez les artefacts de construction HTML unique
+SAE302/Docs/_build/singlehtml/
+  .buildinfo
+  index.html
+  objects.inv
+  _static/
+    *.js
+    *.css
+    fonts/
+      *.eot
+      *.svg
+      *.ttf
+      *.woff
+      *.woff2
+
+
+# Ignorez les fichiers sources de la documentation Sphinx
+SAE302/Docs/
+  client.rst
+  conf.py
+  GUI.rst
+  index.rst
+  make.bat
+  Makefile
+  modules.rst
+  server.rst
+
+
+# Ignorez le répertoire Seleenix/ et son contenu
+Seleenix/
