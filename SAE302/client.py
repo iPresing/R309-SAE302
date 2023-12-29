@@ -55,13 +55,18 @@ import os
 import argparse
 import psutil
 from scapy.all import *
+import dotenv
 
 # configuration client
 init(autoreset=True) # pour que les couleurs s'appliquent à tout le terminal
 global connected    
 connected = False
-key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
-iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
+#key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
+#iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
+#cipher = AES.new(key, AES.MODE_CBC, iv)
+dotenv.load_dotenv()
+key = os.getenv('AES_KEY').encode() # récupérer depuis les variables d'environnements
+iv = os.getenv('AES_IV').encode() #récupérer depuis les variables d'environnements
 cipher = AES.new(key, AES.MODE_CBC, iv)
 
 
@@ -81,10 +86,7 @@ class BannedFromServer(Exception):
     def __init__(self, message):
         super().__init__(message)
      
-        
-        
-    
-        
+         
         
 def cls():
     os.system('cls' if os.name=='nt' else 'clear')
@@ -530,12 +532,18 @@ if __name__ == "__main__":
     host = None
     port = None
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Socket personnalisé
-    #client_socket = ssl.wrap_socket(client_socket,ca_certs="./Certs/rootCA.pem", ssl_version=ssl.PROTOCOL_TLSv1_2) # wrap le socket avec TLS
     if args.search == True or args.search == 1:
-        vm_check = True \
-            if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() \
-                or getResults("WMIC BIOS GET SERIALNUMBER").split("\n")[1] == "0" \
-                    else False # Vérifie si le client est dans une VM ou non.
+        
+        if os.name == 'nt':
+            vm_check = True \
+                if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() \
+                    or getResults("WMIC BIOS GET SERIALNUMBER").split("\n")[1] == "0" \
+                        else False # Vérifie si le client est dans une VM ou non.
+        else:
+            vm_check = True \
+                if "virtualbox" in getResults('dmidecode -s system-product-name').lower() \
+                    or getResults("dmidecode -s system-serial-number").split("\n")[1] == "0" \
+                        else False # Vérifie si le client est dans une VM ou non.
             
         if not vm_check:
             c_iface = get_interface_name_by_ip(get_ip())

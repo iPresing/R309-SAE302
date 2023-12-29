@@ -54,7 +54,6 @@ import hashlib
 import os
 import mysql.connector
 from mysql.connector import Error
-import keyboard
 import argparse
 import time
 import logging
@@ -65,7 +64,23 @@ from scapy.all import *
 from scapy.all import conf
 import datetime
 import builtins as bt
-import ssl
+import itertools
+import dotenv
+
+
+def animate():
+    for c in itertools.cycle(['....','.......','..........','............']):
+        if done:
+            break
+        sys.stdout.write('\rVérifier adresse IP et si PORT disponible '+c)
+        sys.stdout.flush()
+        time.sleep(0.1)
+        
+    IP_host = get_ip()
+    sys.stdout.write('\r -----Serveur démarré. en attente de clients-----\n')
+    sys.stdout.write(f'Adresse IP du serveur: {IP_host}\n')
+    sys.stdout.write(f'Port du serveur: {port}\n')
+
 
 # gestion des droits utilisateurs
 class user_capabilities(object):
@@ -91,7 +106,7 @@ class user_capabilities(object):
         __eq__: méthode pour comparer les attributs de la classe
         __ne__: méthode pour comparer les attributs de la classe
         is_admin: méthode pour vérifier si l'utilisateur est administrateur
-        username: méthode pour récupérr le nom d'utilisateur
+        username: méthode pour récupérer le nom d'utilisateur
         allowed_room: méthode pour récupérer les salons autorisés
         
     Raises:
@@ -219,12 +234,18 @@ def arg_parse():
 global connected
 global socket_list
 global user_caps
-connected = True
+connected = False
 socket_list = {} # dictionnaire contenant les sockets des clients
 user_caps = {} # dictionnaire contenant les droits des utilisateurs
-key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
-iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
-mysql_passwd = os.environ['MYSQL_PASSWD'] #récupérer depuis les variables d'environnements
+#key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
+#iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
+#mysql_passwd = os.environ['MYSQL_PASSWD'] #récupérer depuis les variables d'environnements
+
+# récupère key, iv, mysql_passwd depuis .env
+dotenv.load_dotenv()
+key = os.getenv('AES_KEY').encode() # récupérer depuis les variables d'environnements
+iv = os.getenv('AES_IV').encode() #récupérer depuis les variables d'environnements
+mysql_passwd = os.getenv('MYSQL_PASSWD') #récupérer depuis les variables d'environnements
 cipher = AES.new(key, AES.MODE_CBC, iv)
 
 # Liste de pseudos par défaut
@@ -306,6 +327,8 @@ def decrypt(payload): # pour automatiser decryption
 
 
 def user_sql_handler(user, password, socket, ip_address):
+    
+    ip_address = ip_address.strip('()\'').split(',')[0].strip('\'')
     """
     Fonction essentielle permettant de gérer l'authentification des utilisateurs.
     Elle gère à la fois la connexion et l'inscription des utilisateurs.
@@ -355,23 +378,42 @@ def user_sql_handler(user, password, socket, ip_address):
             special_query = "SELECT * FROM sanction WHERE username = %s AND type = %s"
             cursor.execute(special_query, (user, "ban"))
             special_row = cursor.fetchone()
+            
+            # requête spéciale permettant de vérifier si l'utilisateur est banni dans la table sanction, ou si la date de fin de sanction est dépassée
+            
             if special_row:
                 raise BannedUser(f"Vous avez été banni, veuillez contacter l'administrateur{str(':') + str(special_row[3]) if special_row[3] else ''}")
             else:
                 pass
+            
+            
+            #requête spéciale permettant de vérifier si l'utilisateur est kické dans la table sanction
+            special_query2 = "SELECT * FROM sanction WHERE username = %s AND type = %s"
+            cursor.execute(special_query2, (user, "kick"))
+            special_row2 = cursor.fetchone()
+            
+            if special_row2:
+                # convertir la date en time stamp
+                time_kick = datetime.datetime.timestamp(special_row2[6])
+                if floor(time_kick) > floor(time.time()) and special_row2[2] == 'ALL':
+                    raise BannedUser(f"Vous avez été banni, veuillez contacter l'administrateur{str(':') + str(special_row[3]) if special_row[3] else ''}")
+                else:
+                    pass
+                    
         
             #current_user = user_capabilities(row[0], row[3], row[2])
             user_caps[socket] = user_capabilities(row[0], row[3], row[2])
             print("Utilisateur trouvé, restauration de ses données...")
+            return True
         else:
-            # nouvelle requête pour vérifier occurence de l'ip si > 2 alors pass
+            # nouvelle requête pour vérifier occurence de l'ip si > 1 alors pass
             query = "SELECT * FROM users WHERE ip = %s OR ip = %s"
             cursor.execute(query, (ip_address,'0.0.0.0'))
             #print(ip_address)
             
             ip_row = cursor.fetchall()
-            #print(ip_row)
-            if len(ip_row) > 2: # 2 comptes max par ip
+            print(ip_row)
+            if len(ip_row) > 1: # 2 comptes max par ip
                 raise LimitConnectionIP("Vous avez atteint la limite de connexion sur cette adresse ip")
             else:     
                 second_query = "SELECT * FROM users WHERE username = %s"
@@ -380,7 +422,7 @@ def user_sql_handler(user, password, socket, ip_address):
                     raise IncorrectPassword("Utilisateur trouvé, mais le mot de passe est incorrect")
                 else:
                     print("Utilisateur non trouvé, création d'un nouvel utilisateur...")
-                    cursor.execute("INSERT INTO users (username, password, allowed_room, ip) VALUES (%s, %s, %s, %s)", (user, password, str("General"), host))
+                    cursor.execute("INSERT INTO users (username, password, allowed_room, ip) VALUES (%s, %s, %s, %s)", (user, password, str("General"), ip_address))
                     connection.commit()
                     user_caps[socket] = user_capabilities(user, str("General"), 0) # pour nouveau utilisateur
                     #user_caps[socket] = user_capabilities(user, password, str("General")) # pour nouveau utilisateur 
@@ -600,15 +642,35 @@ def Send(socket, host):
                     pass
                 else:
                     if len(socket_list) > 1:
-                        # envoyer à tous les clients
-                        try:
-                            for user in socket_list.values():
-                                user.send(msg.encode()) if msg else None
-                        except OSError as err:
-                            print(Fore.RED + f"Le socket {user} n'existe plus", end=f'\n{Fore.RESET}')
-                            pass
-                        else:
-                            pass
+                        forwarded = False
+                        
+                        while not forwarded:
+                            # envoyer à tous les clients
+                            try:
+                                for user in socket_list.values():
+                                    if bt.type(user) == str:# donc fermé
+                                        pass
+                                    else:
+                                        user.send(msg.encode()) if msg else None
+                                forwarded = True
+                            except OSError as err:
+                                
+                                # enlever de socket_list si le socket est fermé
+                                #bugged_socket = user
+                                #user = username(socket_list, bugged_socket)
+                                #user, bugged_socket = socket_list.popitem()
+                                print(Fore.RED + f"Le socket {user} n'existe plus", end=f'\n{Fore.RESET}')
+                                pass
+                            
+                            except AttributeError: # si le socket est fermé (devient un str)
+                                # enlever de socket_list si le socket est fermé
+                                #bugged_socket = user
+                                #user = socket_list[bugged_socket]
+                                #user, bugged_socket = socket_list.popitem()
+                                print(Fore.RED + f"Le message n'a pas été envoyé...", end=f'\n{Fore.RESET}')
+                                pass
+                            else:
+                                pass
                     else:
                         socket.send(msg.encode()) if msg else None
         except ConnectionResetError:
@@ -641,7 +703,7 @@ def Send(socket, host):
                 
                 time_delimiter = ["h", "m"]
                 
-                type = "kick"
+                type = "kick" 
                 
                 try:
                     if not msg_d[1] in socket_list.keys():
@@ -671,9 +733,9 @@ def Send(socket, host):
                             date_debut = datetime.datetime.fromtimestamp(time_debut)
                             date_fin = datetime.datetime.fromtimestamp(time_fin)
                             
-                            
+                                         
                             update_userinfo_sql(user, f'{rooms}!{date_debut}!{date_fin}'\
-                                , f"{f'kick:{reasons}' if reasons else 'kick'}"\
+                                , f"{f'kick:{reasons}' if reasons else type}"\
                                     , socket_list[user] )
                             
                             # log dans query_insert
@@ -681,7 +743,7 @@ def Send(socket, host):
                             if rooms == 'ALL':
                                 socket_list[user].send(f'bye'.encode())
                                 user, socket_list[user] = socket_list.popitem()
-                                hostup = False
+                                #hostup = False
                                 
                             elif rooms == user_caps[socket_list[user]].current_room:
                                 user_caps[socket_list[user]].current_room = "General"
@@ -713,11 +775,40 @@ def Send(socket, host):
                         
                         socket_list[user].send(f'bye'.encode())
                         user, socket_list[user] = socket_list.popitem()
-                        hostup = False
+                        #hostup = False
                     
                 except Exception:
                     print(Fore.RED,"Le format de la commande est incorrect :\nex: /ban [pseudo] [reasons](optional)", end=f"\n{Fore.RESET}" )
-            
+            if msg.startswith("/unban"):
+                msg_d = msg.split(" ")
+                
+                type = "ban"
+                
+                try:
+                    user = msg_d[1]
+                    reasons = msg_d[2] if len(msg_d) > 3 else None
+                    
+                    # bloc try except pour enlever la sanction si l'utilisateur est banni
+                    try:
+                        connection = mysql.connector.connect(
+                            host='localhost',
+                            database='seleenix',
+                            user='root',  # récupéré depuis var d'environnement
+                            password=mysql_passwd  # récupéré depuis var d'environnement
+                        )
+                        cursor = connection.cursor()
+                        query = "DELETE FROM sanction WHERE username = %s AND type = %s"
+                        cursor.execute(query, (user, type))
+                        connection.commit()
+                    except Error as e:
+                        print("Erreur de connexion à la base de données", e)
+                    finally:
+                        if connection.is_connected():
+                            cursor.close()
+                            connection.close()
+                    
+                except Exception:
+                    print(Fore.RED,"Le format de la commande est incorrect :\nex: /unban [pseudo]", end=f"\n{Fore.RESET}" )
             
             
             if msg == "/kill":
@@ -841,6 +932,7 @@ def receive(socket, host):
         ConnectionAbortedError: si la connexion est interrompue par le serveur
         OSError: si le socket est fermé
         Exception: si la commande n'est pas valide
+        AttributeError: si le socket est fermé (devient string)
 
     """
 
@@ -857,7 +949,7 @@ def receive(socket, host):
             
             hostup = False
             print("La connexion a été interrompue par le client")
-            socket.close()
+            socket.close() if bt.type(socket) != str else None
             break
         except ConnectionAbortedError:
             
@@ -866,8 +958,19 @@ def receive(socket, host):
             
             hostup = False
             print("(rcv)Le serveur a fermé sa connexion")
-            socket.close() if bt.type(socket) == socket else None
+            socket.close() if bt.type(socket) != str else None
             break
+        
+        except OSError:
+            #enlever username et socket de socket_list
+            socket_list[socket], socket = socket_list.popitem()
+            
+            #hostup = False
+            print("(rcv)Le socket a été fermé")
+            socket.close() if bt.type(socket) != str else None
+            pass
+        except AttributeError: # quand le socket se ferme et devient un string
+            pass
         else:
             # liste qui contient tous les entêtes de réponses à une commande
             # elle est utilisée pour éviter que les clients envoient des fausses réponses à une commande
@@ -888,21 +991,33 @@ def receive(socket, host):
                 m_rooms = user_caps[socket].current_room
                 id = user_caps[socket].all_rooms.index(m_rooms)
                 content = reply
+                forwarded = False
                 
-                # Cette variable contient les sockets des clients qui sont dans la même room que le client actuel
-                target_list = [a if \
-                    (user_caps[a].current_room == user_caps[socket].current_room)  \
-                        and a != socket else None for a in socket_list.values()]
-            
-                for user_target in target_list:
+                while not forwarded:
                     try:
-                        user_target.send(f"fwd:{username(socket_list,socket)}:{reply}".encode()) \
-                            if user_target else None
-                    except OSError as err:
-                        print(Fore.RED + f"Le socket {user_target} n'existe plus", end=f'\n{Fore.RESET}')
+                        # Cette variable contient les sockets des clients qui sont dans la même room que le client actuel
+                        target_list = [a if \
+                            (user_caps[a].current_room == user_caps[socket].current_room)  \
+                                and a != socket and type(a) != str else None for a in socket_list.values()]
+                    except KeyError as err:
+                        print(Fore.RED + f"Un message n'a pas été envoyé", end=f'\n{Fore.RESET}')            
+                        #print(Fore.RED + f"Le user {err} n'existe plus", end=f'\n{Fore.RESET}')
                         pass
-                    else:
-                        pass
+                
+                    for user_target in target_list:
+                        try:
+                            user_target.send(f"fwd:{username(socket_list,socket)}:{reply}".encode()) \
+                                if user_target else None
+                            forwarded = True
+                        except OSError as err:        
+                            # enlever de socket_list si le socket est fermé
+                            bugged_socket = user_target
+                            user_target = username(socket_list, bugged_socket)
+                            user_target, bugged_socket = socket_list.popitem()
+                            #print(Fore.RED + f"Le socket {user_target} n'existe plus", end=f'\n{Fore.RESET}')
+                            pass
+                        else:
+                            pass
                 
                 
                 try: # tentative d'insertion dans la base de données
@@ -1261,63 +1376,75 @@ if __name__ == "__main__":
     """
     host = "0.0.0.0"
     port = arg_parse().port
-    
+    check = False
+    done = False
     # Création du socket serveur
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen(5)
+    try:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((host, port))
+        server_socket.listen(5)
+        check = True
+    except BaseException:
+        print("Vérifiez que le port soit libre et l'adresse que vous avez entré soit valide")
+        done = False
+        
+    if check:
+        connected = True
+        conf.verb = 0  # Pour ne pas afficher les messages de scapy
+        # Afin d'annonce le serveur sur le réseau, on envoie un message UDP
+        thread_load = threading.Thread(target=animate)
+        thread_load.start()
+        time.sleep(4)
+        done = True
+        
+        threading.Thread(target=send_announcement, args=((port),)).start()
+
+
+
+        # Boucle principale d'attente de connexions
+        while connected:
+            try:
+                cipher = AES.new(key, AES.MODE_CBC, iv)
+                conn, address = server_socket.accept()
+                #print(type(conn))
+                
     
-    conf.verb = 0  # Pour ne pas afficher les messages de scapy
-    # Afin d'annonce le serveur sur le réseau, on envoie un message UDP
-    threading.Thread(target=send_announcement, args=((port),)).start()
-
-
-
-    # Boucle principale d'attente de connexions
-    while connected:
-        try:
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            conn, address = server_socket.accept()
-            """
-            server_ssl = ssl.wrap_socket(
-                conn, server_side=True, 
-                certfile="./Certs/rootCA.pem", 
-                keyfile="./Certs/rootCA.key")
-            """
-            
-            message = conn.recv(1024)
-            message_1 = decrypt(message)
-        except ValueError as e:
-            print("Le message n'a pas pu être déchiffré",e)
-            conn.send("garbage".encode())
-            conn.close()
-        except OSError:
-            pass
+                
+                message = conn.recv(1024)
+                message_1 = decrypt(message)
+                #message_1 = message
+                print(message_1)
+            except ValueError as e:
+                print("Le message n'a pas pu être déchiffré",e)
+                conn.send("garbage".encode())
+                conn.close()
+            except OSError:
+                pass
+            else:
+                if not ";" in message_1:
+                    conn.send("garbage".encode())
+                    conn.close()
+                else:
+                    #message_2 = conn.recv(1024).decode()
+                    client_challenge, credentials = message_1.split(";")[0].split(","), message_1.split(";")[1].split(",")
+                    connect_condition = lambda x: int(x) % 2 == 0
+                    client_condition = all(connect_condition(elem) for elem in client_challenge)
+                if client_condition:
+                    unique_pseudo = random.choice(default_pseudo, replace=False) \
+                        if credentials[0] == "default" \
+                            else credentials[0]  # choisir un pseudo unique si pas de user dans credentials
+                    is_auth = user_sql_handler(unique_pseudo, credentials[1], conn, str(address))
+                    # ajouter au dictionnaire socket_list une entrée avec clé le pseudonyme et comme valeur le socket
+                    if is_auth:
+                        socket_list[f"{unique_pseudo}"] = conn
+                        conn.send(f"synced,{unique_pseudo},{user_caps[conn].current_room}".encode()) if not "GUI" in message_1 \
+                            else conn.send(f"synced:{unique_pseudo}:{user_caps[conn].current_room}:{user_caps[conn].allowed_room}".encode())
+                        threading.Thread(target=interactive, args=(conn, host)).start()
+                        #interactive(conn, host)
+                        conn.close() if not connected else None
+                else:
+                    conn.send("garbage".encode())
+                    conn.close()
         else:
-            if not ";" in message_1:
-                conn.send("garbage".encode())
-                conn.close()
-            else:
-                #message_2 = conn.recv(1024).decode()
-                client_challenge, credentials = message_1.split(";")[0].split(","), message_1.split(";")[1].split(",")
-                connect_condition = lambda x: int(x) % 2 == 0
-                client_condition = all(connect_condition(elem) for elem in client_challenge)
-            if client_condition:
-                unique_pseudo = random.choice(default_pseudo, replace=False) \
-                    if credentials[0] == "default" \
-                        else credentials[0]  # choisir un pseudo unique si pas de user dans credentials
-                is_auth = user_sql_handler(unique_pseudo, credentials[1], conn, str(address))
-                # ajouter au dictionnaire socket_list une entrée avec clé le pseudonyme et comme valeur le socket
-                if is_auth:
-                    socket_list[f"{unique_pseudo}"] = conn
-                    conn.send(f"synced,{unique_pseudo},{user_caps[conn].current_room}".encode()) if not "GUI" in message_1 \
-                        else conn.send(f"synced:{unique_pseudo}:{user_caps[conn].current_room}:{user_caps[conn].allowed_room}".encode())
-                    threading.Thread(target=interactive, args=(conn, host)).start()
-                    #interactive(conn, host)
-                    conn.close() if not connected else None
-            else:
-                conn.send("garbage".encode())
-                conn.close()
-    else:
-        #server_socket.close()
-        sys.exit()
+            #server_socket.close()
+            sys.exit()

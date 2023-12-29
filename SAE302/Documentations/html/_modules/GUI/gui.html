@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI.gui &mdash; Documentation Seleenix 1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=05dadb3a"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/translations.js?v=d99ca74e"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Seleenix
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Seleenix</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seleenix</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">GUI.gui</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de GUI.gui</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Cet extrait de code est la version graphique du client qui se connecte à un serveur à l&#39;aide d&#39;une connexion socket.</span>
+
+<span class="sd">Exemple d&#39;utilisation :</span>
+<span class="sd">python gui.py --host 127.0.0.1 --port 1234</span>
+
+<span class="sd">Entrées :</span>
+<span class="sd">- host : l&#39;adresse IP du serveur</span>
+<span class="sd">- port : le port du serveur</span>
+<span class="sd">- search : activer la recherche de serveur</span>
+
+<span class="sd">Sorties:</span>
+<span class="sd">- GUI : une interface graphique pour le chat</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="kn">import</span> <span class="n">AES</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.Padding</span> <span class="kn">import</span> <span class="n">pad</span><span class="p">,</span> <span class="n">unpad</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtWidgets</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtCore</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">threading</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">argparse</span><span class="o">,</span> <span class="nn">psutil</span>
+<span class="kn">from</span> <span class="nn">scapy.all</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">getoutput</span> <span class="k">as</span> <span class="n">getResults</span>
+<span class="kn">from</span> <span class="nn">colorama</span> <span class="kn">import</span> <span class="n">init</span><span class="p">,</span> <span class="n">Fore</span><span class="p">,</span> <span class="n">Back</span><span class="p">,</span> <span class="n">Style</span>
+
+
+<span class="k">global</span> <span class="n">connected</span>
+<span class="k">global</span> <span class="n">room</span>
+<span class="n">init</span><span class="p">(</span><span class="n">autoreset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># Pour réinitialiser les couleurs à chaque nouvel affichage </span>
+<span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AES_KEY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="c1"># récupérer depuis les variables d&#39;environnements</span>
+<span class="n">iv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AES_IV&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="c1">#récupérer depuis les variables d&#39;environnements</span>
+<span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">MODE_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">)</span>
+
+
+<span class="c1"># variable global nommé logout_signal composée de 32 caractères aléatoires</span>
+<span class="k">global</span> <span class="n">logout_signal</span>
+<span class="n">logout_signal</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">chr</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">65</span><span class="p">,</span> <span class="mi">90</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">)])</span>
+
+
+<span class="c1"># variable global nommée error_signal composée de 33 caractères aléatoires</span>
+<span class="k">global</span> <span class="n">error_signal</span>
+<span class="n">error_signal</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">chr</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">65</span><span class="p">,</span> <span class="mi">90</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">33</span><span class="p">)])</span>
+
+
+<div class="viewcode-block" id="ChallengeRefused">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChallengeRefused">[docs]</a>
+<span class="k">class</span> <span class="nc">ChallengeRefused</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="c1"># erreur customisée en lien avec le challenge</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="ConnectionClosedByServer">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ConnectionClosedByServer">[docs]</a>
+<span class="k">class</span> <span class="nc">ConnectionClosedByServer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="KickedFromRoom">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.KickedFromRoom">[docs]</a>
+<span class="k">class</span> <span class="nc">KickedFromRoom</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="BannedFromServer">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.BannedFromServer">[docs]</a>
+<span class="k">class</span> <span class="nc">BannedFromServer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="arg_parse">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.arg_parse">[docs]</a>
+<span class="k">def</span> <span class="nf">arg_parse</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fonction permettant de récupérer les arguments de la ligne de commande.</span>
+<span class="sd">    Mais aussi d&#39;ajouter des explicatifs sur les arguments.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        args (obj): Les arguments de la ligne de commande.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Client GUI pour le chat&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--host&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;L</span><span class="se">\&#39;</span><span class="s1">ip du serveur hôte&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--port&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Le port du serveur hôte&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--search&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Activer la recherche (flag)&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="encrypt">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.encrypt">[docs]</a>
+<span class="k">def</span> <span class="nf">encrypt</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span> <span class="c1"># pour automatiser encryption</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encrypter un payload donné en utilisant l&#39;algorithme de chiffrement AES.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        payload (bytes): Le payload à chiffrer.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bytes: Le payload chiffré.</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">MODE_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cipher</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">pad</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">block_size</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="decrypt">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.decrypt">[docs]</a>
+<span class="k">def</span> <span class="nf">decrypt</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span> <span class="c1"># pour automatiser decryption</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decrypter un payload donné en utilisant l&#39;algorithme de chiffrement AES.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        payload (bytes): Le payload à déchiffrer.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Le payload déchiffré.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">MODE_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">unpad</span><span class="p">(</span><span class="n">cipher</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">AES</span><span class="o">.</span><span class="n">block_size</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="ReceiveThread">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ReceiveThread">[docs]</a>
+<span class="k">class</span> <span class="nc">ReceiveThread</span><span class="p">(</span><span class="n">QThread</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe permettant de recevoir les messages du serveur.</span>
+<span class="sd">    Elle fonctionne via les envois de signaux.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        QThread (obj): La classe parente.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        messageReceived (obj): Un signal pour recevoir les messages.</span>
+<span class="sd">        showMessageSignal (obj): Un signal pour afficher les messages.</span>
+<span class="sd">        showErrorMessageSignal (obj): Un signal pour afficher les messages d&#39;erreur.</span>
+<span class="sd">        stopThread (bool): Un booléen pour arrêter le thread.</span>
+<span class="sd">        </span>
+<span class="sd">    Methods:</span>
+<span class="sd">        stop (func): Arrêter le thread.</span>
+<span class="sd">        run (func): Lancer le thread.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">messageReceived</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">showMessageSignal</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">showErrorMessageSignal</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructeur de la classe ReceiveThread.</span>
+<span class="sd">        </span>
+<span class="sd">        Classe permettant de recevoir les messages du serveur.</span>
+<span class="sd">        Elle fonctionne via les envois de signaux.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            QThread (obj): La classe parente.</span>
+<span class="sd">        </span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            messageReceived (obj): Un signal pour recevoir les messages.</span>
+<span class="sd">            showMessageSignal (obj): Un signal pour afficher les messages.</span>
+<span class="sd">            showErrorMessageSignal (obj): Un signal pour afficher les messages d&#39;erreur.</span>
+<span class="sd">            stopThread (bool): Un booléen pour arrêter le thread.</span>
+<span class="sd">            </span>
+<span class="sd">        Methods:</span>
+<span class="sd">            stop (func): Arrêter le thread.</span>
+<span class="sd">            run (func): Lancer le thread.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span> <span class="o">=</span> <span class="kc">False</span>
+    
+<div class="viewcode-block" id="ReceiveThread.stop">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ReceiveThread.stop">[docs]</a>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant d&#39;arrêter le thread.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+        
+<div class="viewcode-block" id="ReceiveThread.run">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ReceiveThread.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de lancer le thread.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None (envoie des signaux)</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">reply</span> <span class="o">=</span> <span class="n">client_socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">reply</span> <span class="o">==</span> <span class="s1">&#39;bye&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConnectionClosedByServer</span><span class="p">(</span><span class="s2">&quot;Connection closed by server&quot;</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="n">reply</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;jn:&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;kick&#39;</span> <span class="ow">in</span> <span class="n">reply</span><span class="p">:</span>
+                    
+                    <span class="n">TimeKick</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;time:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    
+                    <span class="k">raise</span> <span class="n">KickedFromRoom</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">TimeKick</span><span class="p">))</span>
+                
+                <span class="k">if</span> <span class="n">reply</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ConnectionClosedByServer</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">logout_signal</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">ConnectionResetError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">logout_signal</span><span class="p">)</span>
+                <span class="c1">#self.messageReceived.emit(f&quot;{error_signal}: La connexion a été réinitialisée par le serveur&quot;)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">ConnectionAbortedError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_signal</span><span class="si">}</span><span class="s2">: La connexion a été interrompue par le serveur&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="n">KickedFromRoom</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_signal</span><span class="si">}</span><span class="s2">: Vous avez été kick de la room jusque </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">pass</span></div>
+</div>
+
+<span class="c1"># application graphique PyQt6 page de connexion</span>
+<div class="viewcode-block" id="Login">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.Login">[docs]</a>
+<span class="k">class</span> <span class="nc">Login</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe correspondant à la fenêtre de connexion.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        QWidget (obj): La classe parente.</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        username (str): Le nom d&#39;utilisateur.</span>
+<span class="sd">        password (str): Le mot de passe.</span>
+<span class="sd">        show_password (obj): Un bouton pour afficher le mot de passe.</span>
+<span class="sd">        login_button (obj): Un bouton pour se connecter.</span>
+<span class="sd">        register_button (obj): Un bouton pour s&#39;inscrire. [non utilisé]</span>
+<span class="sd">        layout (obj): Le layout de la fenêtre.</span>
+<span class="sd">        ui (obj): L&#39;instance de la classe ChatApp.</span>
+<span class="sd">        connected (bool): Un booléen pour savoir si l&#39;utilisateur est connecté.</span>
+<span class="sd">        current_room (str): La room actuelle.</span>
+<span class="sd">        allowed_room (str): Les rooms autorisées.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods:</span>
+<span class="sd">        open_chat (func): Ouvrir la fenêtre de chat.</span>
+<span class="sd">        updateNewWindowUi (func): Mettre à jour l&#39;interface de la fenêtre de chat.</span>
+<span class="sd">        login (func): Se connecter.</span>
+<span class="sd">        register (func): S&#39;inscrire. [non utilisé]</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+    
+    
+<div class="viewcode-block" id="Login.open_chat">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.Login.open_chat">[docs]</a>
+    <span class="k">def</span> <span class="nf">open_chat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant d&#39;ouvrir la fenêtre de chat.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">=</span> <span class="n">ChatApp</span><span class="p">()</span>
+        <span class="n">connectSignals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="p">)</span></div>
+
+        
+        
+<div class="viewcode-block" id="Login.updateNewWindowUi">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.Login.updateNewWindowUi">[docs]</a>
+    <span class="k">def</span> <span class="nf">updateNewWindowUi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de mettre à jour l&#39;interface de la fenêtre de chat.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">connected</span>
+        <span class="n">connected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">IsConnected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span>
+        <span class="n">room</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">room</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_room</span>
+        <span class="n">allowed_room</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">allowed_room</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_room</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chat - </span><span class="si">{</span><span class="n">room</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">recvthread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="c1"># on lance le thread de réception des messages     </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Vous êtes connecté à la room </span><span class="si">{</span><span class="n">room</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s2">&quot;General&quot;</span> <span class="ow">in</span> <span class="n">allowed_room</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">general_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">general_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="s2">&quot;Blabla&quot;</span> <span class="ow">in</span> <span class="n">allowed_room</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">blabla_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">blabla_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="s2">&quot;Comptabilité&quot;</span> <span class="ow">in</span> <span class="n">allowed_room</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">compta_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">compta_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="s2">&quot;Informatique&quot;</span> <span class="ow">in</span> <span class="n">allowed_room</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">info_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">info_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="s2">&quot;Marketing&quot;</span> <span class="ow">in</span> <span class="n">allowed_room</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">market_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">market_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span></div>
+
+        
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructeur de la classe Login.</span>
+<span class="sd">        </span>
+<span class="sd">        Classe correspondant à la fenêtre de connexion.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            QWidget (obj): La classe parente.</span>
+<span class="sd">            </span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            username (str): Le nom d&#39;utilisateur.</span>
+<span class="sd">            password (str): Le mot de passe.</span>
+<span class="sd">            show_password (obj): Un bouton pour afficher le mot de passe.</span>
+<span class="sd">            login_button (obj): Un bouton pour se connecter.</span>
+<span class="sd">            register_button (obj): Un bouton pour s&#39;inscrire. [non utilisé]</span>
+<span class="sd">            layout (obj): Le layout de la fenêtre.</span>
+<span class="sd">            ui (obj): L&#39;instance de la classe ChatApp.</span>
+<span class="sd">            connected (bool): Un booléen pour savoir si l&#39;utilisateur est connecté.</span>
+<span class="sd">            current_room (str): La room actuelle.</span>
+<span class="sd">            allowed_room (str): Les rooms autorisées.</span>
+<span class="sd">        </span>
+<span class="sd">        Methods:</span>
+<span class="sd">            open_chat (func): Ouvrir la fenêtre de chat.</span>
+<span class="sd">            updateNewWindowUi (func): Mettre à jour l&#39;interface de la fenêtre de chat.</span>
+<span class="sd">            login (func): Se connecter.</span>
+<span class="sd">            register (func): S&#39;inscrire. [non utilisé]</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1">#client_socket_create()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Login&quot;</span><span class="p">)</span>
+        <span class="c1">#self.resize(1000, 1000)</span>
+        <span class="c1">#self.setGeometry(100, 100, 600, 400)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_password</span> <span class="o">=</span> <span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;Show password&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">setEchoMode</span><span class="p">(</span><span class="n">QLineEdit</span><span class="o">.</span><span class="n">EchoMode</span><span class="o">.</span><span class="n">Password</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_password</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">login_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Login&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_password</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">setEchoMode</span><span class="p">(</span><span class="n">QLineEdit</span><span class="o">.</span><span class="n">EchoMode</span><span class="o">.</span><span class="n">Normal</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_password</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">setEchoMode</span><span class="p">(</span><span class="n">QLineEdit</span><span class="o">.</span><span class="n">EchoMode</span><span class="o">.</span><span class="n">Password</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Username: &quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Password: &quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">show_password</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        
+        
+        <span class="c1">#self.layout.addWidget(self.register_button, 2, 1)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login</span><span class="p">)</span>
+        <span class="c1">#self.register_button.clicked.connect(self.register)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="viewcode-block" id="Login.login">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.Login.login">[docs]</a>
+    <span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de se connecter.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            BannedFromServer: Si l&#39;utilisateur est banni du serveur.</span>
+<span class="sd">            ChallengeRefused: Si le challenge est refusé.</span>
+<span class="sd">            ConnectionRefusedError: Si la connexion est refusée.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_socket_create</span><span class="p">()</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="o">.</span><span class="n">text</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">password</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;Veuillez entrer un mot de passe&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">challenge</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">65535</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">)])</span> <span class="c1"># un challenge pour reconnaître une connexion autorisée</span>
+        
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="n">challenge</span> <span class="o">+</span> <span class="s2">&quot;;&quot;</span> <span class="o">+</span> <span class="n">username</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="n">password</span> <span class="o">+</span> <span class="s2">&quot;;&quot;</span> <span class="o">+</span> <span class="s2">&quot;GUI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+    
+     
+        
+        <span class="k">try</span><span class="p">:</span>               
+            <span class="n">client_socket</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+            <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">encrypt</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+            <span class="n">synced</span> <span class="o">=</span> <span class="n">client_socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="c1"># on attend la réponse du serveur pour continuer</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">synced</span><span class="p">)</span>
+            <span class="c1">#if not &quot;synced&quot; in synced:</span>
+           
+            <span class="k">if</span> <span class="s2">&quot;banni&quot;</span> <span class="ow">in</span> <span class="n">synced</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BannedFromServer</span><span class="p">(</span><span class="n">synced</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">synced</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;synced&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ChallengeRefused</span><span class="p">(</span><span class="s2">&quot;Challenge refused&quot;</span><span class="p">)</span>
+                <span class="c1">#connected = True</span>
+                <span class="c1">#widgets.setCurrentIndex(widgets.currentIndex() + 1)</span>
+            
+        <span class="k">except</span> <span class="n">BannedFromServer</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="n">ChallengeRefused</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;Vous n&#39;êtes pas autorisé à accéder à ce serveur...&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">ConnectionRefusedError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;La connexion n&#39;a pas aboutie, vérifiez que le serveur est bien lancé et que l&#39;adresse est correcte&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+            <span class="c1">#print(Fore.RED + &quot; \nLa connexion n&#39;a pas aboutie, vérifiez que le serveur est bien lancé et que l&#39;adresse est correcte&quot;)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">client_socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            
+        
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">synced</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_room</span> <span class="o">=</span> <span class="n">synced</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">allowed_room</span> <span class="o">=</span> <span class="n">synced</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">open_chat</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updateNewWindowUi</span><span class="p">()</span>
+        
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AdminPanel">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.AdminPanel">[docs]</a>
+<span class="k">class</span> <span class="nc">AdminPanel</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Panneau constamment ouvert et affiché à l&#39;écran pour les administrateurs.</span>
+<span class="sd">    Ceux-ci peuvent accepter ou refuser les demandes d&#39;accès à une room.</span>
+<span class="sd">    Et aussi récupérer les requêtes actuelles avec le bouton &quot;Refresh&quot;.</span>
+<span class="sd">    </span>
+<span class="sd">    (Il est important de noter que les utilisateurs basiques n&#39;auront aucune réponse)</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        QWidget (obj): La classe parente.</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        dropdown_list (obj): La liste déroulante.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods:</span>
+<span class="sd">        accept_action (func): Accepter une requête.</span>
+<span class="sd">        refuse_action (func): Refuser une requête.</span>
+<span class="sd">        refresh_action (func): Rafraîchir les requêtes.</span>
+<span class="sd">        updateUI (func): Mettre à jour l&#39;interface.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructeur de la classe AdminPanel.</span>
+<span class="sd">        </span>
+<span class="sd">        Panneau constamment ouvert et affiché à l&#39;écran pour les administrateurs.</span>
+<span class="sd">        Ceux-ci peuvent accepter ou refuser les demandes d&#39;accès à une room.</span>
+<span class="sd">        Et aussi récupérer les requêtes actuelles avec le bouton &quot;Refresh&quot;.</span>
+<span class="sd">        </span>
+<span class="sd">        (Il est important de noter que les utilisateurs basiques n&#39;auront aucune réponse)</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            QWidget (obj): La classe parente.</span>
+<span class="sd">            </span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            dropdown_list (obj): La liste déroulante.</span>
+<span class="sd">        </span>
+<span class="sd">        Methods:</span>
+<span class="sd">            accept_action (func): Accepter une requête.</span>
+<span class="sd">            refuse_action (func): Refuser une requête.</span>
+<span class="sd">            refresh_action (func): Rafraîchir les requêtes.</span>
+<span class="sd">            updateUI (func): Mettre à jour l&#39;interface.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        
+        <span class="n">admin_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+
+        
+        <span class="n">admin_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Admin Panel&quot;</span><span class="p">))</span>
+
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span> <span class="o">=</span> <span class="n">QComboBox</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFixedSize</span><span class="p">(</span><span class="mi">457</span><span class="p">,</span> <span class="mi">167</span><span class="p">)</span>
+        
+        <span class="n">admin_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="p">)</span>
+
+        
+        <span class="n">accept_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Accept&quot;</span><span class="p">)</span>
+        <span class="n">refuse_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Refuse&quot;</span><span class="p">)</span>
+        <span class="n">refresh_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Refresh&quot;</span><span class="p">)</span>
+        <span class="n">accept_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept_action</span><span class="p">)</span>
+        <span class="n">refuse_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refuse_action</span><span class="p">)</span>
+        <span class="n">refresh_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_action</span><span class="p">)</span>
+
+        
+        <span class="n">admin_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">accept_button</span><span class="p">)</span>
+        <span class="n">admin_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">refuse_button</span><span class="p">)</span>
+        <span class="n">admin_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">refresh_button</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">admin_layout</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AdminPanel.accept_action">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.AdminPanel.accept_action">[docs]</a>
+    <span class="k">def</span> <span class="nf">accept_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant d&#39;accepter une requête.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selected_option</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accepted: </span><span class="si">{</span><span class="n">selected_option</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/accept:</span><span class="si">{</span><span class="n">login</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">selected_option</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="k">if</span> <span class="n">selected_option</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1">#client_socket.send(f&quot;/accept:{selected_option.split(&#39; &#39;)[1]}&quot;.encode()) if selected_option else None</span>
+        <span class="c1">#enlever la requête de la liste déroulante</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">())</span> <span class="k">if</span> <span class="n">selected_option</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="AdminPanel.refuse_action">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.AdminPanel.refuse_action">[docs]</a>
+    <span class="k">def</span> <span class="nf">refuse_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de refuser une requête.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selected_option</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Refused: </span><span class="si">{</span><span class="n">selected_option</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/refuse:</span><span class="si">{</span><span class="n">login</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">selected_option</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="k">if</span> <span class="n">selected_option</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1">#client_socket.send(f&quot;/refuse:{selected_option.split(&#39; &#39;)[1]}&quot;.encode()) if selected_option else None</span>
+        <span class="c1">#enlever la requête de la liste déroulante</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">())</span> <span class="k">if</span> <span class="n">selected_option</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+        
+        
+<div class="viewcode-block" id="AdminPanel.refresh_action">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.AdminPanel.refresh_action">[docs]</a>
+    <span class="k">def</span> <span class="nf">refresh_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de rafraîchir les requêtes.</span>
+<span class="sd">        En réalité, elle permet surtout de les récupérer.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/query:</span><span class="si">{</span><span class="n">login</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span></div>
+
+        
+        
+        
+    <span class="c1"># mettre à jour l&#39;ui suite à un ajout externe d&#39;éléments dans la liste déroulante</span>
+<div class="viewcode-block" id="AdminPanel.updateUI">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.AdminPanel.updateUI">[docs]</a>
+    <span class="k">def</span> <span class="nf">updateUI</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de mettre à jour l&#39;interface.</span>
+<span class="sd">        Et d&#39;ajouter dans la liste déroulante les requêtes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            payload (str): Le payload à traiter.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;query:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;!&quot;</span><span class="p">)</span>    
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">query</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="c1"># pour changer le string avec les &quot;[]&quot; en vrai liste</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># ajouter à la liste déroulante si élément pas déjà présent</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> \
+                        <span class="k">if</span> <span class="ow">not</span> <span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">itemText</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> \
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropdown_list</span><span class="o">.</span><span class="n">count</span><span class="p">())]</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+        <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+        
+<span class="c1"># application graphique PyQt6 page de tchat</span>
+<span class="c1"># menu latéral gauche avec 5 boutons</span>
+<span class="c1"># Text box contenant le message à envoyer</span>
+<span class="c1"># bouton envoyer</span>
+
+<div class="viewcode-block" id="ChatApp">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp">[docs]</a>
+<span class="k">class</span> <span class="nc">ChatApp</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe réprésentant la fenêtre graphique du chat.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        QWidget (obj): La classe parente.</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        connected (bool): Un booléen pour savoir si l&#39;utilisateur est connecté.</span>
+<span class="sd">        allowed_room (str): Les rooms autorisées.</span>
+<span class="sd">        room (str): La room actuelle.</span>
+<span class="sd">        username (str): Le nom d&#39;utilisateur.</span>
+<span class="sd">        last_message (str): Le dernier message envoyé.</span>
+<span class="sd">        showMessageSignal (str, str): Un signal pour afficher les messages.</span>
+<span class="sd">        showErrorMessageSignal (str, str): Un signal pour afficher les messages d&#39;erreur.</span>
+<span class="sd">        stopThreadSignal (obj): Un signal pour arrêter le thread.</span>
+<span class="sd">        </span>
+<span class="sd">    Methods:</span>
+<span class="sd">        EditConnected (func): Modifier la variable globale connected.</span>
+<span class="sd">        IsConnected (func): Récupérer la variable globale connected.</span>
+<span class="sd">        join (func): Rejoindre une room.</span>
+<span class="sd">        close (func): Fermer la fenêtre.</span>
+<span class="sd">        closeEvent (func): Fermer la fenêtre.</span>
+<span class="sd">        sendMessage (func): Envoyer un message.</span>
+<span class="sd">        restore_old_messages (func): Restaurer les anciens messages d&#39;un salon.</span>
+<span class="sd">        handleReceivedMessage (func): Traiter les messages reçus.</span>
+<span class="sd">        showInfoMessage (func): Afficher un message.</span>
+<span class="sd">        showCriticalMessage (func): Afficher un message d&#39;erreur.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">allowed_room</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">room</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">last_message</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># Add signals</span>
+    <span class="n">showMessageSignal</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">showErrorMessageSignal</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">stopThreadSignal</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructeur de la classe ChatApp.</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Classe réprésentant la fenêtre graphique du chat.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            QWidget (obj): La classe parente.</span>
+<span class="sd">            </span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            connected (bool): Un booléen pour savoir si l&#39;utilisateur est connecté.</span>
+<span class="sd">            allowed_room (str): Les rooms autorisées.</span>
+<span class="sd">            room (str): La room actuelle.</span>
+<span class="sd">            username (str): Le nom d&#39;utilisateur.</span>
+<span class="sd">            last_message (str): Le dernier message envoyé.</span>
+<span class="sd">            showMessageSignal (str): Un signal pour afficher les messages.</span>
+<span class="sd">            showErrorMessageSignal (str): Un signal pour afficher les messages d&#39;erreur.</span>
+<span class="sd">            stopThreadSignal (obj): Un signal pour arrêter le thread.</span>
+<span class="sd">            </span>
+<span class="sd">        Methods:    </span>
+<span class="sd">            EditConnected (func): Modifier la variable globale connected.</span>
+<span class="sd">            IsConnected (func): Récupérer la variable globale connected.</span>
+<span class="sd">            join (func): Rejoindre une room.</span>
+<span class="sd">            close (func): Fermer la fenêtre.</span>
+<span class="sd">            closeEvent (func): Fermer la fenêtre.</span>
+<span class="sd">            sendMessage (func): Envoyer un message.</span>
+<span class="sd">            restore_old_messages (func): Restaurer les anciens messages d&#39;un salon.</span>
+<span class="sd">            handleReceivedMessage (func): Traiter les messages reçus.</span>
+<span class="sd">            showInfoMessage (func): Afficher un message.</span>
+<span class="sd">            showCriticalMessage (func): Afficher un message d&#39;erreur.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s1">&#39;Chat App&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Créer des widgets</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span> <span class="o">=</span> <span class="n">QListWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_input</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Envoyer&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quit_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Quitter&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">general_room</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;General&quot;</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Blabla&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Comptabilité&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info_room</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Informatique&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">market_room</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Marketing&quot;</span><span class="p">)</span>
+       
+        <span class="bp">self</span><span class="o">.</span><span class="n">admin_panel</span> <span class="o">=</span> <span class="n">AdminPanel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">admin_panel</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        
+        
+
+        <span class="c1"># Mettre en place la mise en page</span>
+        <span class="n">upper_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">h_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">side_menu_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+
+        
+        <span class="c1">#menu latéral gauche avec 5 boutons</span>
+        <span class="n">side_menu_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="p">)</span>
+        <span class="n">side_menu_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span><span class="p">)</span>
+        <span class="n">side_menu_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span><span class="p">)</span>
+        <span class="n">side_menu_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info_room</span><span class="p">)</span>
+        <span class="n">side_menu_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">market_room</span><span class="p">)</span>
+        
+        
+        <span class="c1"># menu latéral + message list </span>
+        <span class="n">upper_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">side_menu_layout</span><span class="p">)</span>
+        <span class="n">upper_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">upper_layout</span><span class="p">)</span>
+
+        <span class="n">h_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_input</span><span class="p">)</span>
+        <span class="n">h_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">send_button</span><span class="p">)</span>
+        <span class="n">h_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quit_button</span><span class="p">)</span>
+
+        <span class="c1">#h_layout.addLayout(side_menu_layout)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">h_layout</span><span class="p">)</span>
+        
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+
+        <span class="c1"># Connecter le signal du bouton &quot;Envoyer&quot; à la fonction correspondante</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">)</span>
+        
+        <span class="c1"># Connecter le signal du bouton &quot;Quitter&quot; à la fonction correspondante</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quit_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info_room</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info_room</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">market_room</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">market_room</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">recvthread</span> <span class="o">=</span> <span class="n">ReceiveThread</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recvthread</span><span class="o">.</span><span class="n">messageReceived</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handleReceivedMessage</span><span class="p">)</span>
+        <span class="n">connectSignals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="ChatApp.showInfoMessage">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.showInfoMessage">[docs]</a>
+    <span class="k">def</span> <span class="nf">showInfoMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant  l&#39;émission d&#39;un signal pour afficher un message.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            title (str): Le titre du message.</span>
+<span class="sd">            message (str): Le message.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">showMessageSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChatApp.showCriticalMessage">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.showCriticalMessage">[docs]</a>
+    <span class="k">def</span> <span class="nf">showCriticalMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant l&#39;émission d&#39;un signal pour afficher un message d&#39;erreur.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            title (str): Le titre du message.</span>
+<span class="sd">            message (str): Le message.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">showErrorMessageSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>  </div>
+
+        
+        
+    <span class="c1"># afin d&#39;impacter toutes les instances de ChatApp en set</span>
+<div class="viewcode-block" id="ChatApp.EditConnected">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.EditConnected">[docs]</a>
+    <span class="k">def</span> <span class="nf">EditConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de modifier la variable globale connected.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            new_value (bool): La nouvelle valeur de la variable globale.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ChatApp</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="n">new_value</span></div>
+
+    <span class="c1"># afin d&#39;impacter toutes les instances de ChatApp en get</span>
+<div class="viewcode-block" id="ChatApp.IsConnected">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.IsConnected">[docs]</a>
+    <span class="k">def</span> <span class="nf">IsConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de récupérer la variable globale connected.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: La valeur de la variable globale.</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ChatApp</span><span class="o">.</span><span class="n">connected</span> </div>
+
+        
+            
+<div class="viewcode-block" id="ChatApp.join">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.join">[docs]</a>
+    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button_room</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de rejoindre une room.</span>
+<span class="sd">        Dans le cas où l&#39;utilisateur ne peut pas rejoindre la room, </span>
+<span class="sd">        une demande de souscription est envoyée au serveur.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            button_room (obj): Le bouton de la room.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">button_room</span><span class="o">.</span><span class="n">styleSheet</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;background-color: lightgreen;&quot;</span><span class="p">:</span>
+            <span class="n">room</span> <span class="o">=</span> <span class="n">button_room</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/join </span><span class="si">{</span><span class="n">room</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">room</span> <span class="o">=</span> <span class="n">button_room</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/subscribe </span><span class="si">{</span><span class="n">room</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;/rooms&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="c1"># pour rafraîchir           </span></div>
+
+        
+<div class="viewcode-block" id="ChatApp.close">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de fermer la fenêtre.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            super().close(): La fonction close de la classe parente.</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EditConnected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1">#ouvrir une nouvelle instance de Login</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">Login</span><span class="p">()</span>
+        <span class="n">login</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Login&quot;</span><span class="p">)</span>
+        <span class="n">login</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">admin_panel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ChatApp.closeEvent">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.closeEvent">[docs]</a>
+    <span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction d&#39;événement accompagnant la fermeture de la fenêtre.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            event (obj): L&#39;événement.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recvthread</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">client_socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div>
+
+        
+<div class="viewcode-block" id="ChatApp.sendMessage">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.sendMessage">[docs]</a>
+    <span class="k">def</span> <span class="nf">sendMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant d&#39;envoyer un message.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ConnectionAbortedError: Si la connexion est interrompue par le serveur./ </span>
+<span class="sd">                                    Vous avez bien été déconnecté du serveur.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">IsConnected</span><span class="p">:</span>
+            <span class="c1"># Récupérer le texte de la boîte de texte</span>
+            <span class="n">message_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_input</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_message</span> <span class="o">=</span> <span class="n">message_text</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Envoyer le texte</span>
+                <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">message_text</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="k">if</span> <span class="n">message_text</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Vous: </span><span class="si">{</span><span class="n">message_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">message_text</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">message_text</span> <span class="o">==</span> <span class="s2">&quot;bye&quot;</span> <span class="ow">or</span> <span class="n">message_text</span> <span class="o">==</span> <span class="s2">&quot;arret&quot;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ConnectionAbortedError</span><span class="p">(</span><span class="s2">&quot;Closed connection&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_input</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ConnectionAbortedError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">message_text</span> <span class="o">==</span> <span class="s2">&quot;bye&quot;</span><span class="p">:</span>
+                    <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;La connexion a été interrompue par le serveur&quot;</span><span class="p">)</span>
+                    <span class="c1">#self.connected = False</span>
+                    <span class="c1">#client_socket.close()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Info&quot;</span><span class="p">,</span> <span class="s2">&quot;Vous avez bien été déconnecté du serveur&quot;</span><span class="p">)</span>
+                    <span class="c1">#self.connected = False</span>
+                    <span class="c1">#client_socket.close()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+    
+<div class="viewcode-block" id="ChatApp.restore_old_messages">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.restore_old_messages">[docs]</a>
+    <span class="k">def</span> <span class="nf">restore_old_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Permet de restaurer les anciens messages du salon actuel.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            payload (str): Les anciens messages du salon.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            None (contrôlé par serveur)</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_messages</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;old:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># restaure les messages du salon actuel</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">all_messages</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> \
+                <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> \
+                    <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;Vous: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+                    
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+    
+    
+<div class="viewcode-block" id="ChatApp.handleReceivedMessage">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.ChatApp.handleReceivedMessage">[docs]</a>
+    <span class="k">def</span> <span class="nf">handleReceivedMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction permettant de traiter les messages reçus.</span>
+<span class="sd">        </span>
+<span class="sd">        - cmd: Si le serveur renvoie une commande.</span>
+<span class="sd">        - scb: Si le serveur renvoie une réponse du /subscribe.</span>
+<span class="sd">        - users: Si le serveur renvoie la liste des utilisateurs. </span>
+<span class="sd">                /!\ (non gérée dans GUI)</span>
+<span class="sd">        - query: Si le serveur renvoie la liste des requêtes pour admin.</span>
+<span class="sd">        - jn: Si le serveur renvoie la réponse du /join.</span>
+<span class="sd">        - us: Si le serveur renvoie la réponse du /unsubscribe.</span>
+<span class="sd">        - fwd: Si le serveur renvoie la réponse du /forward.</span>
+<span class="sd">        - old: Si le serveur renvoie les anciens messages.</span>
+<span class="sd">                </span>
+<span class="sd">        Args:</span>
+<span class="sd">            message (str): Le message reçu.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Depuis les signaux:</span>
+<span class="sd">                - Error: Si le serveur renvoie une erreur.</span>
+<span class="sd">                - Déconnexion: Si le serveur renvoie une déconnexion.</span>
+<span class="sd">                </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">error_signal</span><span class="p">):</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_signal</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">):])</span>
+            <span class="c1">#self.close()</span>
+        <span class="k">elif</span> <span class="n">message</span> <span class="o">==</span> <span class="n">logout_signal</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Déconnexion&quot;</span><span class="p">,</span> <span class="s2">&quot;Vous avez bien été déconnecté du serveur&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1">#self.showMessageSignal.emit(&quot;Déconnexion&quot;, &quot;Vous avez bien été déconnecté du serveur&quot;)</span>
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;cmd:&quot;</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;cmd:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">room</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;General&quot;</span> <span class="ow">in</span> <span class="n">room</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: </span><span class="si">{color}</span><span class="s2">;&quot;</span>\
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span> <span class="k">if</span> <span class="n">room</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;alw:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="s2">&quot;Blabla&quot;</span> <span class="ow">in</span> <span class="n">room</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: </span><span class="si">{color}</span><span class="s2">;&quot;</span>\
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span> <span class="k">if</span> <span class="n">room</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;alw:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="s2">&quot;Comptabilité&quot;</span> <span class="ow">in</span> <span class="n">room</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: </span><span class="si">{color}</span><span class="s2">;&quot;</span>\
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span> <span class="k">if</span> <span class="n">room</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;alw:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="s2">&quot;Informatique&quot;</span> <span class="ow">in</span> <span class="n">room</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">info_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: </span><span class="si">{color}</span><span class="s2">;&quot;</span>\
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span> <span class="k">if</span> <span class="n">room</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;alw:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="s2">&quot;Marketing&quot;</span> <span class="ow">in</span> <span class="n">room</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">market_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: </span><span class="si">{color}</span><span class="s2">;&quot;</span>\
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span> <span class="k">if</span> <span class="n">room</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;alw:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;scb:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la réponse du /subscribe</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;scb:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="s2">&quot;accept&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+                <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;/rooms&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">client_socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;/rooms&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;users:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la liste des utilisateurs</span>
+            <span class="k">pass</span> <span class="c1"># Non géré (voir le client non graphique pour implémenter la logique)</span>
+        
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;query:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la liste des requêtes pour admin</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">admin_panel</span><span class="o">.</span><span class="n">updateUI</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="c1"># pour mettre à jour son UI </span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;jn:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la réponse du /join</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;jn:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s2">&quot;Succès&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">room</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Vous avez rejoint la room </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">room</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">room</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>          
+                <span class="k">if</span> <span class="n">room</span> <span class="o">==</span> <span class="s2">&quot;General&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">room</span> <span class="o">==</span> <span class="s2">&quot;Blabla&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">blabla_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">room</span> <span class="o">==</span> <span class="s2">&quot;Comptabilité&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">compta_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">room</span> <span class="o">==</span> <span class="s2">&quot;Informatique&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">info_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">room</span> <span class="o">==</span> <span class="s2">&quot;Marketing&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">market_room</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: red;&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">room</span> <span class="o">=</span> <span class="n">room</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Vous avez rejoint la room </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">room</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;us:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la réponse du /unsubscribe</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;us:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s2">&quot;désabonné&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">general_room</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fwd:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie la réponse du /forward</span>
+            <span class="n">fwd_user</span><span class="p">,</span> <span class="n">fwd_message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;fwd:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;fwd:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fwd_user</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">fwd_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;old:&quot;</span><span class="p">):</span> <span class="c1"># le serveur renvoie les anciens messages</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">restore_old_messages</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">if</span> <span class="n">message</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message_list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;server:</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+                
+    
+<div class="viewcode-block" id="connectSignals">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.connectSignals">[docs]</a>
+<span class="k">def</span> <span class="nf">connectSignals</span><span class="p">(</span><span class="n">chat_app_instance</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cette fonction permet de connecter les signaux entre deux classes</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        chat_app_instance (obj): L&#39;instance de la classe ChatApp.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chat_app_instance</span><span class="o">.</span><span class="n">showMessageSignal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">chat_app_instance</span><span class="o">.</span><span class="n">showInfoMessage</span><span class="p">)</span>
+    <span class="n">chat_app_instance</span><span class="o">.</span><span class="n">showErrorMessageSignal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">chat_app_instance</span><span class="o">.</span><span class="n">showCriticalMessage</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="client_socket_create">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.client_socket_create">[docs]</a>
+<span class="k">def</span> <span class="nf">client_socket_create</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fonction permettant d&#39;initier de nouveaux sockets afin de se connecter au serveur.</span>
+<span class="sd">    Ce socket est accessible depuis tout le programme via la variable globale client_socket.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">client_socket</span>
+    <span class="n">client_socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    
+    
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="get_ip">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.get_ip">[docs]</a>
+<span class="k">def</span> <span class="nf">get_ip</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fonction utilisant un socket afin d&#39;initier une connexion vers 8.8.8.8</span>
+<span class="sd">    et récupérer l&#39;adresse IP de l&#39;interface utilisée.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: L&#39;adresse IP de l&#39;interface.</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: Si la connexion échoue.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="s2">&quot;8.8.8.8&quot;</span><span class="p">,</span> <span class="mi">80</span><span class="p">))</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># récupérer l&#39;adresse ip de l&#39;interface</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span></div>
+
+
+<span class="c1"># Cette fonction a été générée par chatgpt</span>
+<div class="viewcode-block" id="get_interface_name_by_ip">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.get_interface_name_by_ip">[docs]</a>
+<span class="k">def</span> <span class="nf">get_interface_name_by_ip</span><span class="p">(</span><span class="n">ip_address</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fonction générée par ChatGPT permettant de récupérer nom </span>
+<span class="sd">    d&#39;une interface active</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        ip_address (str): L&#39;adresse IP de l&#39;interface.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Le nom de l&#39;interface.</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Utiliser socket pour résoudre le nom d&#39;hôte associé à l&#39;adresse IP</span>
+        <span class="n">hostname</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyaddr</span><span class="p">(</span><span class="n">ip_address</span><span class="p">)</span> <span class="c1"># le _ veut dire ne rentrer la valeur dans une variable (utilisé parfois dans les boucles)</span>
+        
+        <span class="c1"># Utiliser psutil pour obtenir les informations sur les interfaces réseau</span>
+        <span class="k">for</span> <span class="n">interface</span><span class="p">,</span> <span class="n">addrs</span> <span class="ow">in</span> <span class="n">psutil</span><span class="o">.</span><span class="n">net_if_addrs</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">addrs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">addr</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">ip_address</span> <span class="ow">or</span> <span class="n">addr</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">hostname</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">interface</span>
+
+        <span class="c1"># Si aucune correspondance n&#39;est trouvée</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">except</span> <span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">herror</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+        <span class="c1"># Gérer les erreurs en cas de résolution d&#39;adresse IP ou si l&#39;adresse IP n&#39;est pas trouvée dans les interfaces</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="handle_announcement">
+<a class="viewcode-back" href="../../GUI.html#GUI.gui.handle_announcement">[docs]</a>
+<span class="k">def</span> <span class="nf">handle_announcement</span><span class="p">(</span><span class="n">pkt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fonction permettant de chercher l&#39;annoncement du serveur à travers le réseau</span>
+<span class="sd">    sur une interface donnée et de récupérer l&#39;adresse IP et le port du serveur.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        pkt (packet): Le paquet reçu.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">port</span><span class="p">,</span> <span class="n">host</span>
+    <span class="k">if</span> <span class="n">pkt</span><span class="o">.</span><span class="n">haslayer</span><span class="p">(</span><span class="n">IP</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pkt</span><span class="o">.</span><span class="n">haslayer</span><span class="p">(</span><span class="n">UDP</span><span class="p">):</span>
+        <span class="n">load</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">[</span><span class="n">Raw</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;Server announcement&quot;</span> <span class="ow">in</span> <span class="n">load</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Received announcement:&quot;</span><span class="p">,</span> <span class="n">load</span><span class="p">)</span>
+            <span class="n">server_ip</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">[</span><span class="n">IP</span><span class="p">]</span><span class="o">.</span><span class="n">src</span>
+            <span class="c1">#server_port = pkt[UDP].sport - 1</span>
+            <span class="n">server_port</span> <span class="o">=</span> <span class="n">load</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Server IP:&quot;</span><span class="p">,</span> <span class="n">server_ip</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Server Port:&quot;</span><span class="p">,</span> <span class="n">server_port</span><span class="p">)</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">server_port</span><span class="p">)</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">server_ip</span></div>
+
+            
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Point d&#39;entrée du programme client (si exécuté en script)</span>
+<span class="sd">    </span>
+<span class="sd">    Récupérer les arguments de la ligne de commande et lancer le programme client.</span>
+<span class="sd">    </span>
+<span class="sd">    Si search est activé:</span>
+<span class="sd">        vérifier si le client s&#39;exécute sur une machine virtuelle. Si ce n&#39;est pas le cas, rechercher des serveurs sur le réseau local en utilisant des paquets UDP.</span>
+<span class="sd">        Puis s&#39;il y a un serveur trouvé, démarrer main avec l&#39;adresse et le port du serveur.</span>
+<span class="sd">    Sinon:</span>
+<span class="sd">        démarrer main avec l&#39;adresse et le port du serveur. (fournis en argument ou par défaut)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">arg_parse</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">search</span><span class="p">:</span>
+        <span class="n">vm_check</span> <span class="o">=</span> <span class="kc">True</span> \
+        <span class="k">if</span> <span class="s2">&quot;virtualbox&quot;</span> <span class="ow">in</span> <span class="n">getResults</span><span class="p">(</span><span class="s1">&#39;WMIC COMPUTERSYSTEM GET MODEL&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> \
+            <span class="ow">or</span> <span class="n">getResults</span><span class="p">(</span><span class="s2">&quot;WMIC BIOS GET SERIALNUMBER&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span> \
+                <span class="k">else</span> <span class="kc">False</span> <span class="c1"># Vérifie si le client est dans une VM ou non.</span>
+        <span class="c1">#vm_check = False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vm_check</span><span class="p">:</span>
+            <span class="n">c_iface</span> <span class="o">=</span> <span class="n">get_interface_name_by_ip</span><span class="p">(</span><span class="n">get_ip</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;searching for server...&quot;</span><span class="p">)</span>
+            <span class="n">client_ports</span> <span class="o">=</span> <span class="mi">9999</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;udp port </span><span class="si">{</span><span class="n">client_ports</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">sniff</span><span class="p">(</span><span class="n">prn</span><span class="o">=</span><span class="n">handle_announcement</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">iface</span><span class="o">=</span><span class="n">c_iface</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">host</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">port</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">Fore</span><span class="o">.</span><span class="n">RED</span> <span class="o">+</span> <span class="s2">&quot;Impossible de trouver le serveur, vérifiez que le serveur est bien lancé sur le réseau local.&quot;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+            
+            
+            <span class="n">host</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">host</span> <span class="k">if</span> <span class="n">host</span> <span class="o">==</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">host</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span> <span class="k">if</span> <span class="n">port</span> <span class="o">==</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">port</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">Fore</span><span class="o">.</span><span class="n">RED</span> <span class="o">+</span> <span class="s2">&quot;Vous ne pouvez pas lancer le client en mode recherche depuis une machine virtuelle.&quot;</span> <span class="o">+</span> <span class="n">Fore</span><span class="o">.</span><span class="n">YELLOW</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Il est important de noter que vous devriez mettre le serveur sur cette VM et les clients sur des machines physiques.(pour que ça puisse fonctionner)&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">host</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span>
+    <span class="c1">#client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">widgets</span> <span class="o">=</span> <span class="n">QStackedWidget</span><span class="p">()</span>
+    <span class="n">login</span> <span class="o">=</span> <span class="n">Login</span><span class="p">()</span>
+    <span class="n">login</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Login&quot;</span><span class="p">)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur 2023, iPresing.</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+socketSSLtest module
+====================
+
+.. automodule:: socketSSLtest
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+utilisateurs module
+===================
+
+.. automodule:: utilisateurs
+   :members:
+   :undoc-members:
+   :show-inheritance:

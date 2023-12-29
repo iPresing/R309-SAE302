@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>server module &mdash; Documentation Seleenix 1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=05dadb3a"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/translations.js?v=d99ca74e"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Recherche" href="search.html" />
+    <link rel="prev" title="client module" href="client.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Seleenix
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">SAE302</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="GUI.html">GUI package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="client.html">client module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">server module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#server.BannedUser"><code class="docutils literal notranslate"><span class="pre">BannedUser</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.IncorrectPassword"><code class="docutils literal notranslate"><span class="pre">IncorrectPassword</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.LimitConnectionIP"><code class="docutils literal notranslate"><span class="pre">LimitConnectionIP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.LogoutBroadcast"><code class="docutils literal notranslate"><span class="pre">LogoutBroadcast</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.Send"><code class="docutils literal notranslate"><span class="pre">Send()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.animate"><code class="docutils literal notranslate"><span class="pre">animate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.arg_parse"><code class="docutils literal notranslate"><span class="pre">arg_parse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.cls"><code class="docutils literal notranslate"><span class="pre">cls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.decrypt"><code class="docutils literal notranslate"><span class="pre">decrypt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.encrypt"><code class="docutils literal notranslate"><span class="pre">encrypt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.get_interface_name_by_ip"><code class="docutils literal notranslate"><span class="pre">get_interface_name_by_ip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.get_ip"><code class="docutils literal notranslate"><span class="pre">get_ip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.interactive"><code class="docutils literal notranslate"><span class="pre">interactive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.receive"><code class="docutils literal notranslate"><span class="pre">receive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.restore_old_messages"><code class="docutils literal notranslate"><span class="pre">restore_old_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.send_announcement"><code class="docutils literal notranslate"><span class="pre">send_announcement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.update_userinfo_sql"><code class="docutils literal notranslate"><span class="pre">update_userinfo_sql()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.user_capabilities"><code class="docutils literal notranslate"><span class="pre">user_capabilities</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#server.user_capabilities.all_rooms"><code class="docutils literal notranslate"><span class="pre">user_capabilities.all_rooms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#server.user_capabilities.allowed_room"><code class="docutils literal notranslate"><span class="pre">user_capabilities.allowed_room</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#server.user_capabilities.current_room"><code class="docutils literal notranslate"><span class="pre">user_capabilities.current_room</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#server.user_capabilities.is_admin"><code class="docutils literal notranslate"><span class="pre">user_capabilities.is_admin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#server.user_capabilities.username"><code class="docutils literal notranslate"><span class="pre">user_capabilities.username</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#server.user_sql_handler"><code class="docutils literal notranslate"><span class="pre">user_sql_handler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server.username"><code class="docutils literal notranslate"><span class="pre">username()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seleenix</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">SAE302</a></li>
+      <li class="breadcrumb-item active">server module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/server.rst.txt" rel="nofollow"> Afficher la source de la page</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-server">
+<span id="server-module"></span><h1>server module<a class="headerlink" href="#module-server" title="Link to this heading"></a></h1>
+<p>Cet extrait de code est une implémentation du serveur d’un application de chat. 
+Il inclut des classes pour gérer les permissions utilisateurs, gérer les exceptions, et intéragir avec la base de donnée Mysql. 
+Le serveur écoute les connexions entrantes, authentifie les utilisateurs, et leur permet d’envoyer et recevoir des messages dans différents salons de discussion.</p>
+<p>La gestion des permissions se fait en grande partie localement, mais dès qu’il y a modification il y a restauration depuis la base de donnée Mysql.</p>
+<p>L’utilisation de code ANSI permet de correctement positionner le terminal afin d’éviter de rencontrer des artéfacts visuels,
+on ne peut malheureusement gérer tous ces artifacts.</p>
+<p>Exemple d’utilisation:
+python server.py –port 1234</p>
+<p>Entrées:
+- port: Le port sur lequel le serveur écoute les connexions entrantes.</p>
+<p>Déroulement:
+1. Le serveur créé un socket et le bind à lui-même et un port (spécifié en arguments).
+2. Le serveur commence à écouter les connexions entrantes.
+3. Quand un client se connecte, le serveur reçoit un payload contenant les informations suivantes:
+- challenge: une suite logique permettant de vérifier authenticié du client
+- username: le nom d’utilisateur du client
+- password: le mot de passe du client
+4. Le serveur vérifie les informations d’authentification en les comparant à une base de données MySQL.
+5. Si les informations sont valides, le serveur ajoute le socket du client à un dictionnaire de clients connectés. (socket_list)
+6. Le serveur démarre un nouveau thread pour gérer l’interaction du client.
+7. Le client peut envoyer et recevoir des messages dans différents salons de discussion.
+8. Le serveur stocke les messages dans une base de données MySQL pour une récupération future.
+9. Le serveur diffuse les messages reçus à tous les clients dans le même salon de discussion.
+10. Le serveur gère les commandes telles que rejoindre un salon, s’abonner à un salon, et expulser / bannir des utilisateurs.
+11. Le serveur arrête le thread d’interaction et ferme le socket du client lorsque le client se déconnecte.</p>
+<p>Sorties:
+- Messages reçus des clients sont diffusés à d’autres clients dans le même salon de discussion.
+- Le serveur gère les commandes et met à jour les capacités de l’utilisateur et les salons autorisés en conséquence.
+- Le serveur stocke les messages dans une base de données MySQL pour une récupération future.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="server.BannedUser">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">BannedUser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#BannedUser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.BannedUser" title="Link to this definition"></a></dt>
+<dd><p>Bases : <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="server.IncorrectPassword">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">IncorrectPassword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#IncorrectPassword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.IncorrectPassword" title="Link to this definition"></a></dt>
+<dd><p>Bases : <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="server.LimitConnectionIP">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">LimitConnectionIP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#LimitConnectionIP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.LimitConnectionIP" title="Link to this definition"></a></dt>
+<dd><p>Bases : <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="server.LogoutBroadcast">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">LogoutBroadcast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#LogoutBroadcast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.LogoutBroadcast" title="Link to this definition"></a></dt>
+<dd><p>Bases : <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.Send">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">Send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">socket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#Send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.Send" title="Link to this definition"></a></dt>
+<dd><p>Fonction permettant d’envoyer des messages.
+Elle gère également les commandes administrateurs et les requêtes sql.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>socket: le socket du client
+host: l’hôte du serveur</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>ConnectionResetError: si la connexion est interrompue par le client
+OSError: si le socket est fermé
+LogoutBroadcast: si le serveur envoie un message de déconnexion général
+Exception: si la commande n’est pas valide</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.animate">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">animate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#animate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.animate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.arg_parse">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">arg_parse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#arg_parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.arg_parse" title="Link to this definition"></a></dt>
+<dd><p>Fonction permettant de parser les arguments passés en ligne de commande</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>None</p>
+</dd>
+<dt>Returns:</dt><dd><p>args: les arguments passés en ligne de commande</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.cls">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">cls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#cls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.cls" title="Link to this definition"></a></dt>
+<dd><p>Fonction permettant de nettoyer la console</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>None</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.decrypt">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">decrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#decrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.decrypt" title="Link to this definition"></a></dt>
+<dd><p>Decrypter un payload donné en utilisant l’algorithme de chiffrement AES.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>payload (bytes): Le payload à déchiffrer.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: Le payload déchiffré.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.encrypt">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">encrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#encrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.encrypt" title="Link to this definition"></a></dt>
+<dd><p>Encrypter un payload donné en utilisant l’algorithme de chiffrement AES.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>payload (bytes): Le payload à chiffrer.</p>
+</dd>
+<dt>Returns:</dt><dd><p>bytes: Le payload chiffré.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.get_interface_name_by_ip">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">get_interface_name_by_ip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip_address</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#get_interface_name_by_ip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.get_interface_name_by_ip" title="Link to this definition"></a></dt>
+<dd><p>Fonction générée par ChatGPT permettant de récupérer nom 
+d’une interface active</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>ip_address (str): L’adresse IP de l’interface.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: Le nom de l’interface.</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.get_ip">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">get_ip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#get_ip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.get_ip" title="Link to this definition"></a></dt>
+<dd><p>Fonction utilisant un socket afin d’initier une connexion vers 8.8.8.8
+et récupérer l’adresse IP de l’interface utilisée.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>None</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: L’adresse IP de l’interface.</p>
+</dd>
+<dt>Raises:</dt><dd><p>Exception: Si la connexion échoue.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.interactive">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">interactive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#interactive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.interactive" title="Link to this definition"></a></dt>
+<dd><p>Fonction permettant d’initier le mode interactif avec le client.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>target: le socket du client
+host: l’hôte du serveur</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.receive">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">receive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">socket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.receive" title="Link to this definition"></a></dt>
+<dd><p>Fonction permettant de gérer la réception de messages.
+Elle gère également les commandes administrateurs et les requêtes sql.
+Elle gère aussi le broadcast des messages reçus aux utilisateurs connectés (dans le même salon).</p>
+<p>Elle enregistre les messages dans la base de données.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>socket: le socket du client
+host: l’hôte du serveur</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>ConnectionResetError: si la connexion est interrompue par le client
+ConnectionAbortedError: si la connexion est interrompue par le serveur
+OSError: si le socket est fermé
+Exception: si la commande n’est pas valide</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.restore_old_messages">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">restore_old_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">socket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#restore_old_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.restore_old_messages" title="Link to this definition"></a></dt>
+<dd><p>Cette fonction permet de récupérer la totalité des messages d’un salon donné.
+Elle est utilisée lorsqu’un utilisateur rejoint un salon.
+Elle récupère les messages depuis la base de données.
+Et les envoie à l’utilisateur.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>socket: le socket du client</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>Error: si la connexion à la base de données échoue</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.send_announcement">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">send_announcement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server_port</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#send_announcement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.send_announcement" title="Link to this definition"></a></dt>
+<dd><p>Cette fonction permet d’envoyer dans le réseau local un message UDP
+afin d’annoncer la présence du serveur. (et ses informations)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>server_port: le port du serveur</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.update_userinfo_sql">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">update_userinfo_sql</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">socket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#update_userinfo_sql"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.update_userinfo_sql" title="Link to this definition"></a></dt>
+<dd><p>Fonction essentielle permettant la mise à jour des informations dans la base de données suite à l’éxécution de commandes.
+Pour aller plus loin, elle permet de mettre à jour le contexte autours des utilisateurs (salons autorisés, droits d’administrateur, etc…)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>user: le nom d’utilisateur
+value: la valeur à mettre à jour
+reason: la raison de la mise à jour
+socket: le socket du client</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><p>Exception: si la raison n’est pas valide (upgrade, roomupdate, password, roomdowngrade, kick, ban, query_insert, query_update)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.user_capabilities">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">user_capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_room</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_admin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#user_capabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.user_capabilities" title="Link to this definition"></a></dt>
+<dd><p>Bases : <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Classe permettant de gérer localement les droits des utilisateurs.
+Ces droits sont stockés dans une base de donnée Mysql et sont restaurés dans le classe à chaque modification.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>object: classe parente</p>
+</dd>
+<dt>Attributes:</dt><dd><p>username: le nom d’utilisateur
+allowed_room: les salons autorisés
+is_admin: les droits d’administrateur
+all_rooms: tous les salons disponibles
+current_room: le salon actuel</p>
+</dd>
+<dt>Methods:</dt><dd><p>__init__: constructeur de la classe
+__str__: méthode pour afficher les attributs de la classe
+__repr__: méthode pour afficher les attributs de la classe
+__eq__: méthode pour comparer les attributs de la classe
+__ne__: méthode pour comparer les attributs de la classe
+is_admin: méthode pour vérifier si l’utilisateur est administrateur
+username: méthode pour récupérr le nom d’utilisateur
+allowed_room: méthode pour récupérer les salons autorisés</p>
+</dd>
+<dt>Raises:</dt><dd><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.user_capabilities.all_rooms">
+<span class="sig-name descname"><span class="pre">all_rooms</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['General',</span> <span class="pre">'Blabla',</span> <span class="pre">'Comptabilité',</span> <span class="pre">'Informatique',</span> <span class="pre">'Marketing']</span></em><a class="headerlink" href="#server.user_capabilities.all_rooms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="server.user_capabilities.allowed_room">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">allowed_room</span></span><a class="headerlink" href="#server.user_capabilities.allowed_room" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.user_capabilities.current_room">
+<span class="sig-name descname"><span class="pre">current_room</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'General'</span></em><a class="headerlink" href="#server.user_capabilities.current_room" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="server.user_capabilities.is_admin">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_admin</span></span><a class="headerlink" href="#server.user_capabilities.is_admin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="server.user_capabilities.username">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">username</span></span><a class="headerlink" href="#server.user_capabilities.username" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.user_sql_handler">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">user_sql_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">socket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_address</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#user_sql_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.user_sql_handler" title="Link to this definition"></a></dt>
+<dd><p>Fonction essentielle permettant de gérer l’authentification des utilisateurs.
+Elle gère à la fois la connexion et l’inscription des utilisateurs.</p>
+<p>Les mots de passes ne sont pas entrés en clair dans la base de données, ils sont encryptés en utilisant l’algorithme SHA256.
+Une limite de connexion est imposée par adresse ip (2 comptes max par ip).
+Une fois la connexion établie, les informations de l’utilisateur sont restaurées depuis la base de données et insérées dans un dictionnaire (user_caps).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>user: le nom d’utilisateur
+password: le mot de passe
+socket: le socket du client
+ip_address: l’adresse ip du client</p>
+</dd>
+<dt>Returns:</dt><dd><p>True: si l’utilisateur est authentifié
+False: si l’utilisateur n’est pas authentifié</p>
+</dd>
+<dt>Raises:</dt><dd><p>Error: si une erreur de connexion à la base de données est détectée
+IncorrectPassword: si le mot de passe est incorrect
+LimitConnectionIP: si la limite de connexion par ip est atteinte
+BannedUser: si l’utilisateur est banni</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.username">
+<span class="sig-prename descclassname"><span class="pre">server.</span></span><span class="sig-name descname"><span class="pre">username</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server.html#username"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.username" title="Link to this definition"></a></dt>
+<dd><p>Une des méthodes permettant de récupérer le pseudo à partir de la valeur « socket »
+en parcourant un dictionnaire (normalement socket_list)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>dictionary: le dictionnaire à parcourir
+value: la valeur à récupérer</p>
+</dd>
+<dt>Returns:</dt><dd><p>key: la clé correspondant à la valeur
+or
+None: si la valeur n’est pas trouvée</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pied de page">
+        <a href="client.html" class="btn btn-neutral float-left" title="client module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Précédent</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur 2023, iPresing.</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
