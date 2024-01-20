@@ -13,8 +13,8 @@ import time
 
 def arg_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--key", help="AES_KEY", default="N|ix4sqJ`y#u^8Nrn{8I[rCj]Ih_h0d[")
-    parser.add_argument("-i", "--iv", help="AES_IV", default="3lV7k3}k6c0>n8da")
+    parser.add_argument("-k", "--key", help="AES_KEY(32 caractères)", default="N|ix4sqJ`y#u^8Nrn{8I[rCj]Ih_h0d[")
+    parser.add_argument("-i", "--iv", help="AES_IV(16 caractères)", default="3lV7k3}k6c0>n8da")
     parser.add_argument("-db", "--db", help="Database password", default="toto")
     args = parser.parse_args()
     return args
@@ -25,6 +25,10 @@ if __name__ == "__main__":
     AES_KEY = args.key
     AES_IV = args.iv
     DB_PASSWORD = args.db
+    
+    if len(AES_IV) != 16 or len(AES_KEY) != 32:
+        print("La taille de la clé AES ou du vecteur d'initialisation n'est pas correcte !")
+        sys.exit(1)
     
     # Si toutes les valeurs sont des valeurs par défaut demander si il ne veut pas les changer en exécutant le script avec des arguments
     
@@ -188,7 +192,7 @@ if __name__ == "__main__":
             else os.system(f"cp *.py /{venvPath}/bin/")
             
     # Déplacer fichier .env dans le venvPath\Scripts\
-    os.system(f"move .\\.env {venvPath}\\Scripts\\ /y") if os.name == "nt" \
+    os.system(f"xcopy .env {venvPath}\\Scripts\\ /y") if os.name == "nt" \
         else os.system(f"mv .env /{venvPath}/bin/")
     
     

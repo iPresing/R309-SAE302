@@ -396,12 +396,11 @@ def user_sql_handler(user, password, socket, ip_address):
                 # convertir la date en time stamp
                 time_kick = datetime.datetime.timestamp(special_row2[6])
                 if floor(time_kick) > floor(time.time()) and special_row2[2] == 'ALL':
-                    raise BannedUser(f"Vous avez été banni, veuillez contacter l'administrateur{str(':') + str(special_row[3]) if special_row[3] else ''}")
+                    raise BannedUser(f"Vous avez été banni, veuillez contacter l'administrateur{str(':') + str(special_row2[3]) if special_row2[3] else ''}")
                 else:
                     pass
                     
         
-            #current_user = user_capabilities(row[0], row[3], row[2])
             user_caps[socket] = user_capabilities(row[0], row[3], row[2])
             print("Utilisateur trouvé, restauration de ses données...")
             return True
